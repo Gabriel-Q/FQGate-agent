@@ -6,10 +6,10 @@
 
 ```powershell
 openclaw plugins uninstall tonghuasun-agent --dry-run
-openclaw plugins uninstall tonghuasun-agent
+openclaw plugins uninstall tonghuasun-agent --force
 ```
 
-第一条命令只预览将被移除的内容；确认目标确实是 `tonghuasun-agent` 后再执行第二条命令。不要同时启用旧版 `tonghuasun-agent` 和新版 `fqgate-agent`；卸载旧插件不会删除 FQGate 主程序或共享配置。
+第一条命令只预览将被移除的内容；确认目标确实是 `tonghuasun-agent` 后再执行第二条命令。桌面端没有交互式终端，因此自动卸载会带上 `--force`。不要同时启用旧版 `tonghuasun-agent` 和新版 `fqgate-agent`；卸载旧插件不会删除 FQGate 主程序或共享配置。
 
 命令说明见 [OpenClaw 官方插件文档](https://docs.openclaw.ai/cli/plugins)。
 

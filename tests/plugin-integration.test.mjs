@@ -284,6 +284,10 @@ test("八个宿主安装说明都要求先卸载旧版插件", () => {
     /openclaw plugins uninstall tonghuasun-agent --dry-run/
   );
   assert.match(
+    readText("AI-plugins", "openclaw", "README.md"),
+    /openclaw plugins uninstall tonghuasun-agent --force/
+  );
+  assert.match(
     readText("AI-plugins", "deepseek-harness", "README.md"),
     /dsh plugin --profile web remove tonghuasun-agent-deepseek-harness/
   );
