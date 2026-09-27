@@ -6,8 +6,16 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$skillsTouched = $false
 
 trap {
+    if (-not $Uninstall -and $skillsTouched) {
+        # 连接验收失败时撤销本次技能和 MCP 写入，避免留下半个千问入口。
+        try {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installerPath -Uninstall *> $null
+        }
+        catch { }
+    }
     Write-Output "安装没有完成：$($_.Exception.Message)"
     exit 1
 }
@@ -31,26 +39,29 @@ if ($Uninstall) {
     exit 0
 }
 
+# 先让安装器完成所有账号的冲突预检和写入；只有成功返回后才允许失败回滚触碰本次入口。
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installerPath
+if ($LASTEXITCODE -ne 0) { throw "千问入口安装失败。" }
+$skillsTouched = $true
+
 $configurePath = Join-Path $PSScriptRoot "scripts\configure-fqgate.mjs"
 if (-not (Test-Path -LiteralPath $configurePath -PathType Leaf)) {
     throw "安装包不完整，缺少：$configurePath"
 }
-$nodePath = Get-QianwenNodePath
-$fqgateInstallerPath = Join-Path $PSScriptRoot "scripts\install-fqgate.ps1"
 if ([string]::IsNullOrWhiteSpace($FQGatePath)) {
+    $fqgateInstallerPath = Join-Path $PSScriptRoot "scripts\install-fqgate.ps1"
+    if (-not (Test-Path -LiteralPath $fqgateInstallerPath -PathType Leaf)) {
+        throw "安装包不完整，缺少：$fqgateInstallerPath"
+    }
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $fqgateInstallerPath -McpUrl $McpUrl
     if ($LASTEXITCODE -ne 0) { throw "FQGate 主程序安装或连接失败。" }
 }
-$configureArguments = @($configurePath, "configure", "--mcp-url", $McpUrl, "--require-ready", "--json")
-if (-not [string]::IsNullOrWhiteSpace($FQGatePath)) {
-    $configureArguments += @("--fqgate-path", $FQGatePath)
+else {
+    $nodePath = Get-QianwenNodePath
+    & $nodePath $configurePath configure --mcp-url $McpUrl --require-ready --json --fqgate-path $FQGatePath
+    if ($LASTEXITCODE -ne 0) {
+        throw "FQGate 连接配置失败；请用 -FQGatePath 指定 FQGate 可执行文件。"
+    }
 }
-& $nodePath @configureArguments
-if ($LASTEXITCODE -ne 0) {
-    throw "FQGate 连接配置失败；请用 -FQGatePath 指定 FQGate 可执行文件。"
-}
-
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installerPath
-if ($LASTEXITCODE -ne 0) { throw "千问入口安装失败。" }
 
 Write-Output "安装完成。FQGate 已连接；请在千问中新建工作任务验证。"

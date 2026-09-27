@@ -267,6 +267,30 @@ test("Windows 自动安装使用正式包并在连接验收后才结束", () => 
   }
 });
 
+test("接入验收失败时不留下宿主或共享配置半成品", () => {
+  const configure = readText("installer", "runtime", "configure-fqgate.mjs");
+  assert.ok(
+    configure.indexOf("const probe = await probeFqgate(mcpUrl);") <
+      configure.indexOf("const config = writeConfig"),
+    "共享配置必须在 MCP 探针成功后再写入",
+  );
+
+  for (const adapter of ["doubao", "qianwen"]) {
+    const setup = readText("AI-plugins", adapter, "setup.ps1");
+    const skillInstall = setup.lastIndexOf(
+      "& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installerPath",
+    );
+    const skillWrite = setup.indexOf("$skillsTouched = $true", skillInstall);
+    const configurePath = setup.indexOf("$configurePath =");
+    const rollback = setup.indexOf("$installerPath -Uninstall");
+    assert.ok(skillInstall >= 0, `${adapter} 缺少宿主写入步骤`);
+    assert.ok(skillWrite > skillInstall, `${adapter} 必须在宿主写入成功后置位回滚标记`);
+    assert.ok(configurePath > skillWrite, `${adapter} 必须先完成宿主写入`);
+    assert.ok(rollback >= 0, `${adapter} 缺少失败回滚`);
+    assert.ok(rollback < skillWrite, `${adapter} 回滚必须在安装主流程之前注册`);
+  }
+});
+
 test("八个宿主安装说明都要求先卸载旧版插件", () => {
   for (const [adapter] of manifests) {
     const readme = readText("AI-plugins", adapter, "README.md");

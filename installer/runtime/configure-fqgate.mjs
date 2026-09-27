@@ -50,10 +50,11 @@ async function main() {
     }
     const fqgateVersion = readFqgateVersion(executablePath);
     assertFqgateVersionCompatible(fqgateVersion, compatibility);
-    const config = writeConfig({ executablePath, mcpUrl, fqgateVersion }, configPath);
     const probe = await probeFqgate(mcpUrl);
-    print({ command: "configure", configPath, configured: true, ...config, ...probe }, options.json);
     assertReadyWhenRequired(options, probe, fqgateVersion);
+    // 先完成连接和工具验收，再落盘共享配置；探针失败时不留下“看似已接入”的半成品。
+    const config = writeConfig({ executablePath, mcpUrl, fqgateVersion }, configPath);
+    print({ command: "configure", configPath, configured: true, ...config, ...probe }, options.json);
     return;
   }
 
