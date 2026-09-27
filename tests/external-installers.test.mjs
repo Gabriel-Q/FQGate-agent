@@ -187,3 +187,39 @@ test(
     }
   },
 );
+
+test("DeepSeek Harness 发行包包含 FQGate 兼容清单", () => {
+  const root = mkdtempSync(join(tmpdir(), "fqgate-deepseek-package-"));
+  try {
+    const packageRoot = join(root, "package");
+    copyTree(
+      join(repositoryRoot, "AI-plugins", "deepseek-harness"),
+      packageRoot,
+    );
+    copyFile(
+      join(repositoryRoot, "fqgate", "compatibility.json"),
+      join(packageRoot, "metadata", "fqgate-compatibility.json"),
+    );
+    const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+    const result = spawnSync(
+      npmCommand,
+      ["pack", "--dry-run", "--json", "--ignore-scripts"],
+      {
+        cwd: packageRoot,
+        encoding: "utf8",
+        shell: process.platform === "win32",
+        timeout: 30_000,
+      },
+    );
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const report = JSON.parse(result.stdout);
+    assert.ok(
+      report[0]?.files?.some(
+        (file) => file.path === "metadata/fqgate-compatibility.json",
+      ),
+      "npm pack 没有包含 metadata/fqgate-compatibility.json",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
