@@ -88,6 +88,23 @@ function runInstaller(packageRoot, localAppData, uninstall = false) {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 }
 
+function runInstallerExpectFailure(packageRoot, localAppData) {
+  const scriptPath = join(packageRoot, "install.ps1").replaceAll("'", "''");
+  const result = spawnSync("powershell.exe", [
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-Command",
+    `Import-Module Microsoft.PowerShell.Utility; & '${scriptPath}'`,
+  ], {
+    env: { ...process.env, LOCALAPPDATA: localAppData },
+    encoding: "utf8",
+    timeout: 30_000,
+  });
+  assert.notEqual(result.status, 0, `${result.stdout}\n${result.stderr}`);
+}
+
 test(
   "豆包隔离安装、重复安装与第三方来源卸载只影响 FQGate 技能",
   { skip: process.platform !== "win32" },
@@ -182,6 +199,83 @@ test(
       for (const name of skillNames)
         assert.equal(existsSync(join(accountRoot, "skills", name)), false);
       assert.equal(readFileSync(otherSkill, "utf8"), "name: other-skill\n");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "豆包安装冲突在写入前失败，不留下半安装技能",
+  { skip: process.platform !== "win32" },
+  () => {
+    const root = mkdtempSync(join(tmpdir(), "fqgate-doubao-preflight-"));
+    try {
+      const packageRoot = preparePackage(root, "doubao");
+      const localAppData = join(root, "LocalAppData");
+      const skillsRoot = join(
+        localAppData,
+        "Doubao",
+        "User Data",
+        "profile-1",
+        ".doubao",
+        "agent_mode",
+        "workspace",
+        ".user_skills",
+      );
+      const conflict = join(skillsRoot, "trade-execution", "SKILL.md");
+      mkdirSync(dirname(conflict), { recursive: true });
+      writeFileSync(conflict, "name: user-owned\n");
+
+      runInstallerExpectFailure(packageRoot, localAppData);
+      assert.equal(existsSync(join(skillsRoot, "fqgate-realtime-stock-analyzer")), false);
+      assert.equal(readFileSync(conflict, "utf8"), "name: user-owned\n");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "千问 MCP 冲突在写入前失败，不留下技能或适配器目录",
+  { skip: process.platform !== "win32" },
+  () => {
+    const root = mkdtempSync(join(tmpdir(), "fqgate-qianwen-preflight-"));
+    try {
+      const packageRoot = preparePackage(root, "qianwen");
+      const localAppData = join(root, "LocalAppData");
+      const accountRoot = join(
+        localAppData,
+        "Qianwen",
+        "User Data",
+        "qwen-agent",
+        "account-1",
+      );
+      mkdirSync(accountRoot, { recursive: true });
+      writeFileSync(join(accountRoot, "projects.json"), "[]");
+      writeFileSync(
+        join(accountRoot, "mcp.json"),
+        JSON.stringify({ mcpServers: { fqgate: { command: "user-owned" } } }),
+      );
+      const nodePath = join(
+        localAppData,
+        "Qianwen",
+        "User Data",
+        "qwen-agent",
+        "resources",
+        "bins",
+        "node.exe",
+      );
+      mkdirSync(dirname(nodePath), { recursive: true });
+      writeFileSync(nodePath, "");
+
+      runInstallerExpectFailure(packageRoot, localAppData);
+      assert.equal(existsSync(join(accountRoot, "skills")), false);
+      assert.equal(existsSync(join(localAppData, "fqgate", "agents", "qianwen")), false);
+      assert.deepEqual(
+        JSON.parse(readFileSync(join(accountRoot, "mcp.json"), "utf8")),
+        { mcpServers: { fqgate: { command: "user-owned" } } },
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

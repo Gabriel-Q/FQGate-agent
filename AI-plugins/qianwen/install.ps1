@@ -228,6 +228,29 @@ if (-not (Test-Path -LiteralPath $qianwenNodePath -PathType Leaf)) {
     throw "没有找到千问自带的 Node.js。请升级或修复千问客户端后重试。"
 }
 
+if (-not $Uninstall) {
+    # 所有账号先做冲突预检，避免后续账号失败时留下前面账号的半安装状态。
+    foreach ($accountRoot in $accountRoots) {
+        $mcpPath = Join-Path $accountRoot.FullName "mcp.json"
+        $config = Read-JsonHashtable $mcpPath
+        $installedLauncherPath = Join-Path $adapterInstallRoot "scripts\launch-fqgate-mcp.mjs"
+        if ($config["mcpServers"] -is [System.Collections.IDictionary] -and
+            $config["mcpServers"].ContainsKey("fqgate") -and
+            -not (Test-ManagedMcpEntry $config["mcpServers"]["fqgate"] $installedLauncherPath)) {
+            throw "千问中已有同名 fqgate MCP 且不属于本安装包，未覆盖：$mcpPath"
+        }
+        foreach ($skillName in $skillNames) {
+            $sourcePath = Join-Path $PSScriptRoot "skills\$skillName"
+            $destinationPath = Join-Path $accountRoot.FullName "skills\$skillName"
+            if ((Test-Path -LiteralPath $destinationPath -PathType Container) -and
+                -not (Test-ManagedSkill $destinationPath) -and
+                -not (Test-SameSkill $sourcePath $destinationPath)) {
+                throw "千问中已有同名技能且不属于本安装包，未覆盖：$destinationPath"
+            }
+        }
+    }
+}
+
 $adapterChanged = $false
 foreach ($fileName in $runtimeFiles) {
     $adapterChanged = (Copy-FileIfChanged (Join-Path $sourceScriptsRoot $fileName) (Join-Path $adapterInstallRoot "scripts\$fileName")) -or $adapterChanged

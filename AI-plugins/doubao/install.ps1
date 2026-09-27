@@ -112,6 +112,25 @@ $doubaoUserDataRoot = Join-Path $env:LOCALAPPDATA "Doubao\User Data"
 $workspaces = @(Get-DoubaoWorkspaces $doubaoUserDataRoot -AllowEmpty:$Uninstall)
 $changedCount = 0
 
+if (-not $Uninstall) {
+    # 先完整检查所有工作区，避免第二个技能冲突时留下第一个技能的半安装状态。
+    foreach ($workspace in $workspaces) {
+        $skillsRoot = Join-Path $workspace.Path ".user_skills"
+        foreach ($skillName in $skillNames) {
+            $sourcePath = Join-Path $PSScriptRoot "skills\$skillName"
+            if (-not (Test-Path -LiteralPath (Join-Path $sourcePath "SKILL.md") -PathType Leaf)) {
+                throw "豆包安装包不完整，缺少：$sourcePath\SKILL.md"
+            }
+            $destinationPath = Join-Path $skillsRoot $skillName
+            if ((Test-Path -LiteralPath $destinationPath -PathType Container) -and
+                -not (Test-ManagedSkill $destinationPath) -and
+                -not (Test-SameSkill $sourcePath $destinationPath)) {
+                throw "豆包中已有同名技能且不属于本安装包，未覆盖：$destinationPath"
+            }
+        }
+    }
+}
+
 foreach ($workspace in $workspaces) {
     $skillsRoot = Join-Path $workspace.Path ".user_skills"
     foreach ($skillName in @($skillNames + $retiredSkillNames)) {
