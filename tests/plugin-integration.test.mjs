@@ -402,9 +402,12 @@ test("WorkBuddy 正式包本身就是可安装的插件市场", () => {
 
 test("ZCode 正式包使用根目录市场清单", () => {
   const buildScript = readText("scripts", "Build-AgentPlugins.ps1");
+  const readme = readText("AI-plugins", "zcode", "README.md");
   assert.match(buildScript, /ZCode 的本地市场契约要求 marketplace\.json 位于市场根目录/);
   assert.match(buildScript, /Join-Path \$marketplaceRoot "marketplace\.json"/);
   assert.doesNotMatch(buildScript, /zcode-marketplace[\s\S]*\.claude-plugin\\marketplace\.json/);
+  assert.match(readme, /zcode plugins/);
+  assert.match(readme, /fqgate-agent@fqgate-agent-local/);
 });
 
 test("千问安装器复制运行时所需的兼容清单", () => {

@@ -13,6 +13,12 @@
 
 界面入口见 [ZCode 官方插件文档](https://zcode.z.ai/cn/docs/plugin)。
 
+## 自动接入
+
+新版 ZCode CLI 提供 `zcode plugins` 管理命令。FQGate 桌面端检测到该命令时，会自动添加本地市场、安装 `fqgate-agent@fqgate-agent-local`，并在移除时清理对应插件和市场；不会要求用户手动输入命令。
+
+如果本机只有桌面插件页而没有 `zcode` CLI，桌面端会保留官方插件页引导，不会伪造自动安装结果。此时仍可在“设置 → 插件”中添加本地 `marketplace.json`，再安装或卸载插件。
+
 ## FQGate 主程序
 
 > **下载地址别弄混**
