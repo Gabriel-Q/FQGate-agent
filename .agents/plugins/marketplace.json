@@ -1,0 +1,18 @@
+{
+  "name": "fqgate-official",
+  "interface": {
+    "displayName": "FQGate 官方插件市场"
+  },
+  "plugins": [
+    {
+      "name": "fqgate-agent",
+      "source": {
+        "source": "local",
+        "path": "./AI-plugins/codex"
+      },
+      "description": "同花顺免费开源 AI 插件 FQGate，为 Codex 提供本机 A 股行情、K 线、Level-2、资讯、账户查询和可选交易工具。",
+      "version": "1.0.0",
+      "category": "Finance"
+    }
+  ]
+}
