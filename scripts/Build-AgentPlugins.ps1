@@ -92,7 +92,9 @@ try {
             $marketplaceRoot = Join-Path $resolvedTemporaryRoot "zcode-marketplace\fqgate-agent-zcode-marketplace"
             $marketplacePluginRoot = Join-Path $marketplaceRoot "fqgate-agent"
             Copy-DirectoryContents $packageRoot $marketplacePluginRoot
-            Write-JsonFile (Join-Path $marketplaceRoot ".claude-plugin\marketplace.json") ([ordered]@{
+            # ZCode 的本地市场契约要求 marketplace.json 位于市场根目录；
+            # 不能沿用 Claude Code 的 .claude-plugin/marketplace.json 入口。
+            Write-JsonFile (Join-Path $marketplaceRoot "marketplace.json") ([ordered]@{
                 name = "fqgate-agent-local"
                 description = "同花顺免费开源AI插件FQGate的 ZCode 本地插件市场。"
                 plugins = @([ordered]@{

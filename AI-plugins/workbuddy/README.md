@@ -32,7 +32,7 @@ Windows 用户可以在仓库根目录运行 `powershell.exe -NoProfile -Executi
 3. 在 WorkBuddy 终端执行以下命令；发行包本身就是正式插件市场，不需要再创建“本机验收市场”：
 
    ```powershell
-   codebuddy plugin marketplace add .\fqgate-agent-workbuddy-1.0.0.zip --name fqgate-official
+   codebuddy plugin marketplace add .\fqgate-agent-workbuddy-1.0.0 --name fqgate-official
    codebuddy plugin install fqgate-agent@fqgate-official
    ```
 

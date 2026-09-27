@@ -7,7 +7,6 @@
 ```powershell
 openclaw plugins uninstall tonghuasun-agent --dry-run
 openclaw plugins uninstall tonghuasun-agent
-openclaw gateway restart
 ```
 
 第一条命令只预览将被移除的内容；确认目标确实是 `tonghuasun-agent` 后再执行第二条命令。不要同时启用旧版 `tonghuasun-agent` 和新版 `fqgate-agent`；卸载旧插件不会删除 FQGate 主程序或共享配置。
@@ -32,9 +31,8 @@ Windows 用户可以在仓库根目录运行 `powershell.exe -NoProfile -Executi
 先按上面的正式路径下载、校验并启动 FQGate `0.1.0` 或更高版本，再解压 `fqgate-agent-openclaw-1.0.0.zip` 并执行：
 
 ```powershell
-openclaw plugins install .\fqgate-agent
-openclaw plugins enable fqgate-agent
-openclaw gateway restart
+openclaw plugins install .\fqgate-agent --force --accept-capabilities
+openclaw plugins enable fqgate-agent --accept-capabilities
 ```
 
 随后发送“配置 FQGate”。自动发现失败时提供 FQGate 可执行文件路径。可用以下命令检查入口：
@@ -43,6 +41,6 @@ openclaw gateway restart
 openclaw plugins inspect fqgate-agent --runtime --json
 ```
 
-升级时使用 `openclaw plugins install .\fqgate-agent --force` 后重启 Gateway。卸载前可先运行 `openclaw plugins uninstall fqgate-agent --dry-run`；卸载单个入口不会删除共享 FQGate 配置或程序。
+OpenClaw 会自动让运行中的 Gateway 应用插件变更，无需手动重启。卸载前可先运行 `openclaw plugins uninstall fqgate-agent --dry-run`；卸载单个入口不会删除共享 FQGate 配置或程序。
 
 交易写工具默认隐藏，开启后仍须逐笔确认。详情见[隐私政策](../../docs/legal/PRIVACY.md)。

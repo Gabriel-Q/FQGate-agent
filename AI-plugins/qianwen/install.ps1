@@ -67,8 +67,9 @@ function Copy-FileIfChanged([string]$SourcePath, [string]$DestinationPath) {
     return $true
 }
 
-function Get-QianwenAccountRoots([string]$AgentRoot) {
+function Get-QianwenAccountRoots([string]$AgentRoot, [switch]$AllowEmpty) {
     if (-not (Test-Path -LiteralPath $AgentRoot -PathType Container)) {
+        if ($AllowEmpty) { return @() }
         throw "没有找到千问本机数据目录。请先打开千问并进入一次工作任务，然后重试。"
     }
     $reservedNames = @("cache", "observability", "resources", "resources_workspaces", "state")
@@ -78,6 +79,7 @@ function Get-QianwenAccountRoots([string]$AgentRoot) {
          (Test-Path -LiteralPath (Join-Path $_.FullName "projects.json") -PathType Leaf))
     })
     if ($roots.Count -eq 0) {
+        if ($AllowEmpty) { return @() }
         throw "千问尚未创建工作任务数据。请先在千问中进入一次工作任务，然后重试。"
     }
     return $roots
@@ -160,7 +162,7 @@ function Test-LegacyManagedMcpEntry([object]$Entry, [string]$LegacyRoot) {
 if (-not $env:LOCALAPPDATA) { throw "LOCALAPPDATA 不可用，无法定位千问配置。" }
 
 $qianwenAgentRoot = Join-Path $env:LOCALAPPDATA "Qianwen\User Data\qwen-agent"
-$accountRoots = @(Get-QianwenAccountRoots $qianwenAgentRoot)
+$accountRoots = @(Get-QianwenAccountRoots $qianwenAgentRoot -AllowEmpty:$Uninstall)
 $adapterInstallRoot = Join-Path $env:LOCALAPPDATA "fqgate\agents\qianwen"
 $legacyInstallRoot = Join-Path $env:LOCALAPPDATA "TonghuasunCodex\agents\qianwen"
 $installedLauncherPath = Join-Path $adapterInstallRoot "scripts\launch-fqgate-mcp.mjs"
@@ -169,15 +171,19 @@ if ($Uninstall) {
     foreach ($accountRoot in $accountRoots) {
         $mcpPath = Join-Path $accountRoot.FullName "mcp.json"
         $config = Read-JsonHashtable $mcpPath
-        if ($config["mcpServers"] -is [System.Collections.IDictionary] -and
-            $config["mcpServers"].ContainsKey("fqgate") -and
-            (Test-ManagedMcpEntry $config["mcpServers"]["fqgate"] $installedLauncherPath)) {
-            $config["mcpServers"].Remove("fqgate")
-            [void](Write-JsonUtf8IfChanged $mcpPath $config)
+        if ($config["mcpServers"] -is [System.Collections.IDictionary]) {
+            $configChanged = $false
+            foreach ($serverName in @("fqgate", "tonghuasun-agent")) {
+                if ($config["mcpServers"].ContainsKey($serverName)) {
+                    $config["mcpServers"].Remove($serverName)
+                    $configChanged = $true
+                }
+            }
+            if ($configChanged) { [void](Write-JsonUtf8IfChanged $mcpPath $config) }
         }
         foreach ($skillName in @($skillNames + $retiredSkillNames)) {
             $skillPath = Join-Path $accountRoot.FullName "skills\$skillName"
-            if ((Test-Path -LiteralPath $skillPath -PathType Container) -and (Test-ManagedSkill $skillPath)) {
+            if (Test-Path -LiteralPath $skillPath -PathType Container) {
                 Remove-Item -LiteralPath $skillPath -Recurse -Force
             }
         }
@@ -188,6 +194,13 @@ if ($Uninstall) {
             throw "拒绝删除预期目录之外的文件：$adapterInstallRoot"
         }
         Remove-Item -LiteralPath $adapterInstallRoot -Recurse -Force
+    }
+    if (Test-Path -LiteralPath $legacyInstallRoot -PathType Container) {
+        $expectedParent = Join-Path $env:LOCALAPPDATA "TonghuasunCodex\agents"
+        if (-not (Test-PathWithin $legacyInstallRoot $expectedParent)) {
+            throw "拒绝删除预期目录之外的文件：$legacyInstallRoot"
+        }
+        Remove-Item -LiteralPath $legacyInstallRoot -Recurse -Force
     }
     Write-Output "千问中的同花顺免费开源AI插件FQGate已卸载；共享 FQGate 配置和程序均已保留。"
     exit 0

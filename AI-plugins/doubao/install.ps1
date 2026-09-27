@@ -24,8 +24,9 @@ function Write-JsonUtf8([string]$Path, [object]$Value) {
     [IO.File]::WriteAllText($Path, "$(($Value | ConvertTo-Json -Depth 10))`r`n", $utf8)
 }
 
-function Get-DoubaoWorkspaces([string]$UserDataRoot) {
+function Get-DoubaoWorkspaces([string]$UserDataRoot, [switch]$AllowEmpty) {
     if (-not (Test-Path -LiteralPath $UserDataRoot -PathType Container)) {
+        if ($AllowEmpty) { return @() }
         throw "没有找到豆包本机数据。请先打开豆包并进入一次工作任务，然后重试。"
     }
     $workspaces = @()
@@ -36,6 +37,7 @@ function Get-DoubaoWorkspaces([string]$UserDataRoot) {
         }
     }
     if ($workspaces.Count -eq 0) {
+        if ($AllowEmpty) { return @() }
         throw "豆包尚未创建工作任务数据。请先在豆包中进入一次工作任务，然后重试。"
     }
     return $workspaces
@@ -107,7 +109,7 @@ function Install-Skill([string]$SourcePath, [string]$DestinationPath, [string]$S
 if (-not $env:LOCALAPPDATA) { throw "LOCALAPPDATA 不可用，无法定位豆包配置。" }
 
 $doubaoUserDataRoot = Join-Path $env:LOCALAPPDATA "Doubao\User Data"
-$workspaces = @(Get-DoubaoWorkspaces $doubaoUserDataRoot)
+$workspaces = @(Get-DoubaoWorkspaces $doubaoUserDataRoot -AllowEmpty:$Uninstall)
 $changedCount = 0
 
 foreach ($workspace in $workspaces) {
@@ -118,7 +120,12 @@ foreach ($workspace in $workspaces) {
             throw "拒绝修改预期目录之外的文件：$destinationPath"
         }
         if ($Uninstall -or $skillName -in $retiredSkillNames) {
-            if ((Test-Path -LiteralPath $destinationPath -PathType Container) -and
+            if ($Uninstall -and (Test-Path -LiteralPath $destinationPath -PathType Container)) {
+                Remove-Item -LiteralPath $destinationPath -Recurse -Force
+                $changedCount++
+            }
+            elseif (-not $Uninstall -and
+                (Test-Path -LiteralPath $destinationPath -PathType Container) -and
                 (Test-ManagedSkill $destinationPath)) {
                 Remove-Item -LiteralPath $destinationPath -Recurse -Force
                 $changedCount++
@@ -139,11 +146,15 @@ foreach ($workspace in $workspaces) {
             $changedCount++
         }
     }
+    elseif ((Test-Path -LiteralPath (Join-Path $skillsRoot "tonghuasun-agent") -PathType Container) -and
+        (Test-LegacySkill (Join-Path $skillsRoot "tonghuasun-agent"))) {
+        Remove-Item -LiteralPath (Join-Path $skillsRoot "tonghuasun-agent") -Recurse -Force
+        $changedCount++
+    }
 }
 
 if ($Uninstall) {
-    Write-Output "已移除 $changedCount 个由本安装包管理的豆包技能目录；FQGate 程序和共享配置均已保留。"
-    Write-Output "豆包连接器属于账号设置，如不再使用，请在豆包连接器页面中手动删除。"
+    Write-Output "豆包 FQGate 接入已移除；共享 FQGate 配置和程序均已保留。"
 }
 elseif ($changedCount -gt 0) {
     Write-Output "同花顺免费开源AI插件FQGate已安装到 $($workspaces.Count) 个豆包本机用户配置。"

@@ -393,11 +393,18 @@ test("WorkBuddy 正式包本身就是可安装的插件市场", () => {
   assert.match(releaseHelpers, /function Compress-PackageContents/);
   assert.ok(
     readme.includes(
-      `plugin marketplace add .\\fqgate-agent-workbuddy-${agentVersion}.zip --name fqgate-official`
+      `plugin marketplace add .\\fqgate-agent-workbuddy-${agentVersion} --name fqgate-official`
     )
   );
   assert.match(readme, /plugin install fqgate-agent@fqgate-official/);
   assert.match(readme, /发行包本身就是正式插件市场/);
+});
+
+test("ZCode 正式包使用根目录市场清单", () => {
+  const buildScript = readText("scripts", "Build-AgentPlugins.ps1");
+  assert.match(buildScript, /ZCode 的本地市场契约要求 marketplace\.json 位于市场根目录/);
+  assert.match(buildScript, /Join-Path \$marketplaceRoot "marketplace\.json"/);
+  assert.doesNotMatch(buildScript, /zcode-marketplace[\s\S]*\.claude-plugin\\marketplace\.json/);
 });
 
 test("千问安装器复制运行时所需的兼容清单", () => {
