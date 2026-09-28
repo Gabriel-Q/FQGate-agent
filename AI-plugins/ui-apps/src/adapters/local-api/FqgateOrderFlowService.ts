@@ -31,6 +31,9 @@ interface FqgateStreamMessage {
   kind?: FqgateStreamKind;
   code?: number;
   message?: string;
+  reason?: string;
+  category?: string;
+  session_invalidated?: boolean;
   data?: unknown;
 }
 
@@ -219,6 +222,10 @@ class FqgateOrderFlowConnection implements OrderFlowWatchConnection {
   }
 
   private handleNotice(message: FqgateStreamMessage): void {
+    if (isRemoteLevel2Replacement(message)) {
+      if (this.mode === "level2") this.fallbackToBasic();
+      return;
+    }
     if (message.code === 3006) {
       if (this.mode === "level2") this.fallbackToBasic();
       return;
@@ -236,6 +243,13 @@ class FqgateOrderFlowConnection implements OrderFlowWatchConnection {
     this.listener.onModeChange({ mode: "basic", fallbackReason: "permission_denied" });
     this.listener.onConnectionState("connected", "已回退到普通实时行情");
   }
+}
+
+function isRemoteLevel2Replacement(message: FqgateStreamMessage): boolean {
+  return (
+    message.session_invalidated === true &&
+    (message.category === "hq_user_online" || message.reason === "hq_user_online")
+  );
 }
 
 function fallbackReasonFromHealth(permission: boolean | null): OrderFlowFallbackReason | undefined {

@@ -44,6 +44,9 @@ interface FqgateStreamMessage {
   kind?: FqgateStreamKind;
   code?: number;
   message?: string;
+  reason?: string;
+  category?: string;
+  session_invalidated?: boolean;
   resync_required?: boolean;
   data?: FqgateMarketDataPayload & { resync_required?: boolean };
 }
@@ -231,6 +234,10 @@ class FqgateMarketRealtimeConnection implements MarketRealtimeConnection {
   }
 
   private handleNotice(message: FqgateStreamMessage): void {
+    if (isRemoteLevel2Replacement(message) && this.mode === "level2") {
+      this.fallbackToBasic();
+      return;
+    }
     if (message.code === 3006 && this.mode === "level2") {
       this.fallbackToBasic();
       return;
@@ -259,6 +266,13 @@ class FqgateMarketRealtimeConnection implements MarketRealtimeConnection {
     this.listener.onResyncRequired();
   }
 
+}
+
+function isRemoteLevel2Replacement(message: FqgateStreamMessage): boolean {
+  return (
+    message.session_invalidated === true &&
+    (message.category === "hq_user_online" || message.reason === "hq_user_online")
+  );
 }
 
 function fallbackReasonFromHealth(
