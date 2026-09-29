@@ -1,0 +1,24 @@
+{
+  "name": "fqgate-agent",
+  "version": "1.0.0",
+  "description": "FQGate 官方 AI 插件，为 Claude Code 提供本机实时行情、K 线、Level-2、资讯与证券研究能力。",
+  "author": {
+    "name": "zhuyifang",
+    "url": "https://github.com/zhuyifang"
+  },
+  "homepage": "https://github.com/fqgate/FQGate-agent",
+  "repository": "https://github.com/fqgate/FQGate-agent",
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "FQGate",
+    "tonghuasun-agent",
+    "同花顺",
+    "MCP",
+    "A股",
+    "实时行情",
+    "K线",
+    "Level-2",
+    "证券研究",
+    "Claude Code"
+  ]
+}

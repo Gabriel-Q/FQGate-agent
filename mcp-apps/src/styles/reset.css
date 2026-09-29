@@ -1,0 +1,32 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #app { width: 100%; min-width: 0; min-height: 100%; margin: 0; }
+body {
+  overflow: auto;
+  color: var(--fg-primary);
+  background: var(--bg-canvas);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 18px;
+  text-rendering: optimizeLegibility;
+}
+button, input, select { color: inherit; font: inherit; }
+button, input, select, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+button:disabled { color: var(--fg-disabled); cursor: not-allowed; }
+a { color: var(--accent); }
+h1, h2, h3, p { margin: 0; }
+table { border-spacing: 0; border-collapse: separate; }
+[hidden] { display: none !important; }
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

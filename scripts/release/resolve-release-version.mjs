@@ -22,8 +22,8 @@ function parseArguments(argv) {
 
 async function readCurrentVersion(component) {
   const definitions = {
-    agent: ["fqgate/compatibility.json", "agentVersion"],
-    "mcp-apps": ["AI-plugins/ui-apps/mcp-apps/apps.json", "bundleVersion"]
+    agent: ["compatibility.json", "agentVersion"],
+    "mcp-apps": ["mcp-apps/mcp-apps/apps.json", "bundleVersion"]
   };
   const definition = definitions[component];
   if (!definition) throw new Error(`发布组件无效：${component}`);

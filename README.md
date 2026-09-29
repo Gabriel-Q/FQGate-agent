@@ -1,145 +1,91 @@
 <p align="center">
-  <img src="assets/brand/fqgate-logo.png" alt="FQGate 品牌标识" width="152">
+  <img src="assets/brand/fqgate-logo.png" alt="FQGate" width="152">
 </p>
 
-<h1 align="center">FQGate Agent</h1>
+# FQGate Agent
 
-<p align="center">
-  面向多种 AI 工具的开源 FQGate 接入层<br>
-  让 AI 安全、稳定地使用本机 A 股行情、K 线、资讯与 Level-2 数据
-</p>
+FQGate Agent 是 FQGate 2.0 的公开 AI 插件仓库。它只维护三类内容：Codex 与 Claude Code 的插件入口、可复用的金融数据 Skill，以及由 FQGate MCP Server 提供的 MCP Apps 界面源码。
 
-<p align="center">
-  <a href="https://github.com/fqgate/FQGate-agent/actions/workflows/ci.yml"><img src="https://github.com/fqgate/FQGate-agent/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/fqgate/FQGate-agent/releases"><img src="https://img.shields.io/github/v/release/fqgate/FQGate-agent?display_name=tag&sort=semver" alt="Agent Release"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg" alt="AGPL-3.0-only"></a>
-  <a href="https://gitee.com/qicuo/tonghuasun-agent"><img src="https://img.shields.io/badge/Gitee-国内镜像-C71D23" alt="Gitee 国内镜像"></a>
-</p>
+FQGate 2.0 当前向 Agent 提供只读数据查询，不提供账户、持仓、下单、撤单或资金操作。
 
-<p align="center">
-  <img src="assets/brand/fqgate-level2-banner.jpg" alt="FQGate 本地金融 AI Gateway" width="100%">
-</p>
+## 安装
 
-> FQGate 已启用专属 GitHub 组织 [fqgate](https://github.com/fqgate)。后续开源协作、正式发行和品牌建设均以该组织为长期入口。
+推荐在 FQGate 桌面主程序的“AI 接入”页面完成安装。主程序会调用对应 AI 工具的官方 CLI，依次执行检测、计划确认、配置备份、安装、验证；移除时只处理由 FQGate 自己创建的插件资源。
 
-FQGate Agent 是 FQGate 的开源 AI 接入项目，为 Codex、Claude Code、WorkBuddy、ZCode、OpenClaw、DeepSeek Harness、豆包和千问提供安装适配、技能、MCP Apps 界面及可选 SDK。
+也可以直接使用官方 CLI：
 
-> Tonghuashun (THS) market data MCP integration for AI coding agents and assistants.
+```bash
+# Codex
+codex plugin marketplace add fqgate/FQGate-agent --json
+codex plugin add fqgate-agent@fqgate-official --json
 
-## 项目入口
+# Claude Code
+claude plugin marketplace add fqgate/FQGate-agent --scope user
+claude plugin install fqgate-agent@tonghuasun-agent --scope user
+```
 
-| 项目 | 用途 | GitHub | 国内镜像 |
-| --- | --- | --- | --- |
-| FQGate Agent | 开源技能、宿主适配、安装器、MCP Apps 与 SDK | [fqgate/FQGate-agent](https://github.com/fqgate/FQGate-agent) | [Gitee](https://gitee.com/qicuo/tonghuasun-agent) |
-| FQGate Releases | FQGate 官方安装包、稳定版清单与校验信息 | [fqgate/FQGate-releases](https://github.com/fqgate/FQGate-releases) | [Gitee](https://gitee.com/qicuo/fqgate-releases) |
-| FQGate 组织 | 项目主页与后续开源项目 | [github.com/fqgate](https://github.com/fqgate) | — |
+安装后重新打开 AI 会话，使插件、MCP 和 Skill 按宿主机制重新加载。FQGate 主程序必须在本机运行；默认 MCP 地址为 `http://127.0.0.1:17281/mcp`。
 
-> **更名说明：** 原插件名为 `tonghuasun-agent`，现已更名为 `fqgate-agent`。原 GitHub 地址会继续重定向到组织仓库；Gitee 镜像暂时沿用原仓库名，以兼容旧用户、已有收藏和外部链接。
+## 当前能力
 
-所有 AI 插件入口、安装适配、技能和界面组件均免费开源，不设订阅、会员、试用额度或付费解锁。FQGate 主程序作为本机行情网关单独提供编译包，并适用安装包内的许可；其主源码不在本仓库公开。
+| Skill | 目标 |
+| --- | --- |
+| `fqgate-realtime-stock-analyzer` | 具体证券的当前行情、K 线与趋势分析 |
+| `fqgate-stock-screener` | 自然语言条件选股并复核候选盘面 |
+| `fqgate-order-flow-analyzer` | 分时、盘口、逐笔与 Level-2 微观结构 |
+| `fqgate-event-research` | 资讯、重大事件与价格时间轴研究 |
 
-当前 Agent 插件版本为 `1.0.0`，要求 FQGate `0.1.0` 或更高版本。当前稳定版 FQGate 专注行情与资讯，不提供券商登录、账户查询、下单、撤单或资金划转接口；仓库中保留的 `trade-execution` 仅用于兼容仍提供相关接口的历史版本。
+行情、资讯和 Level-2 是否可用，以本机 FQGate 的数据源状态与账号权限为准。权限不足时必须明确说明，不能把低等级数据冒充用户指定的数据。
 
-## 一句话安装
-
-将下面这句话完整发送给你正在使用的 AI 助手：
+## 项目结构
 
 ```text
-请按仓库说明安装并配置 FQGate Agent：https://gitee.com/qicuo/tonghuasun-agent.git。请先阅读根目录 README 和对应 AI 工具的安装说明，根据网络环境选择 FQGate 官方下载源，安装主程序与插件、创建桌面快捷方式、启动 FQGate，并确认名为 fqgate 的连接成功且能读取工具列表或完成健康检查；任何一步失败都请报告具体原因，不要把只下载或解压文件当作安装完成。
+agent-plugin/
+  plugin.json                     可移植插件元数据
+  mcp.json                        可移植 MCP 清单
+  .mcp.json                       Codex / Claude Code MCP 发现文件
+  .codex-plugin/plugin.json       Codex 插件清单
+  .claude-plugin/                 Claude Code 插件与市场清单
+  .agents/plugins/marketplace.json Codex 市场清单
+  skills/                         唯一 Skill 源码
+  mcp-apps/                       唯一 MCP Apps 源码、测试和发布工具
+  scripts/                        跨仓库内置与版本辅助脚本
+  tests/                          插件结构和技能路由门禁
+  docs/                           架构、发布与法律文档
+  compatibility.json             Agent、FQGate 与 MCP 协议兼容合同
 ```
 
-安装流程应完整覆盖：读取说明、选择匹配系统的正式版本、校验安装包、安装并启动 FQGate、配置当前 AI 工具、创建桌面快捷方式，以及验证 `fqgate` 连接。
+这里没有 `plugins/fqgate/` 空包装层，也不再按宿主复制业务目录。宿主差异只存在于各自要求的根级清单中。
 
-## FQGate 主程序下载
+## MCP Apps 的内置与更新
 
-- 国内下载：[Gitee FQGate 正式发行页](https://gitee.com/qicuo/fqgate-releases/releases)
-- GitHub 下载：[FQGate Releases](https://github.com/fqgate/FQGate-releases/releases)
-- 稳定版清单：[releases/stable.json](https://raw.githubusercontent.com/fqgate/FQGate-releases/main/releases/stable.json)
+界面源码在本仓库的 `mcp-apps/`。FQGate 主程序仓库只保存构建后的内置快照：
 
-AI 安装时应先读取稳定版清单，再按操作系统和架构选择文件，并核对大小与 SHA-256。GitHub 正式包的下载地址格式为 `https://github.com/fqgate/FQGate-releases/releases/download/fqgate-v<version>/<fileName>`。
-
-### Windows 自动安装
-
-在已克隆的仓库根目录运行：
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\installer\runtime\install-fqgate.ps1
+```bash
+npm --prefix mcp-apps ci
+npm run embed:mcp-apps -- --fqgate-root ../fqgate
 ```
 
-脚本会选择当前正式版，下载并检查 FQGate，安装到当前用户的应用目录，创建一个桌面快捷方式，启动主程序并检查连接。若使用已经解压的 Agent 发行包，请按发行包内的目录结构选择相应安装脚本。
+主程序首次启动或离线时使用该快照；启动后会检查 `fqgate/FQGate-releases` 中经过 Ed25519 签名的稳定通道。更新会安装到版本目录并切换新会话，已有 MCP 会话继续固定使用创建时的版本。
 
-安装结束前，AI 应确认 FQGate 已经启动、名为 `fqgate` 的连接已经成功，并且能够读取工具列表或完成健康检查。如果连接尚未成功，应明确说明“插件文件已安装，但 FQGate 尚未连接”。
+MCP Apps 的运行时资源由 FQGate MCP Server 返回。AI 宿主负责渲染 `ui://` 资源，但不维护组件源码或更新逻辑。
 
-## 选择你的 AI 工具
+## 开发门禁
 
-| AI 工具 | 安装说明 |
-| --- | --- |
-| Codex | [AI-plugins/codex](./AI-plugins/codex/README.md) |
-| Claude Code | [AI-plugins/claude-code](./AI-plugins/claude-code/README.md) |
-| WorkBuddy | [AI-plugins/workbuddy](./AI-plugins/workbuddy/README.md) |
-| ZCode | [AI-plugins/zcode](./AI-plugins/zcode/README.md) |
-| OpenClaw | [AI-plugins/openclaw](./AI-plugins/openclaw/README.md) |
-| DeepSeek Harness | [AI-plugins/deepseek-harness](./AI-plugins/deepseek-harness/README.md) |
-| 豆包 | [AI-plugins/doubao](./AI-plugins/doubao/README.md) |
-| 千问 | [AI-plugins/qianwen](./AI-plugins/qianwen/README.md) |
+```bash
+npm --prefix mcp-apps ci
+npm test
+```
 
-## 可以直接这样问
+`npm test` 会校验插件清单、Skill 路由、MCP Apps bridge、类型、自包含构建和签名发布合同。
 
-- “查看航天机电的 A 股实时行情，并说明主要盘口变化。”
-- “显示贵州茅台最近一个月的日 K 线。”
-- “同时对比工业富联、招商银行和宁德时代的行情。”
-- “查看这只股票今天的分时、盘口和 Level-2 逐笔数据。”
-- “汇总这家公司最近的公告和市场资讯，并标注信息时间。”
+详细边界见[架构设计](./docs/架构设计.md)与[自动发布](./docs/自动发布.md)。FQGate 主程序安装包从 [FQGate-releases](https://github.com/fqgate/FQGate-releases/releases) 获取。
 
-普通行情在没有登录同花顺账号时可以使用游客行情；问财基础查询需要登录同花顺账号；Level-2 数据还要求账号已经开通相应权限。游客行情的数据可能延迟或受限，最终可用能力以 FQGate 实际返回的工具列表及账号权限为准。
+## 安全与许可
 
-## 为什么使用 FQGate
+- MCP 默认只监听回环地址，不应配置到公网或局域网地址。
+- Skill 与 MCP Apps 不保存密码、验证码、完整账号或会话凭据。
+- AI 的分析与推断必须和 FQGate 返回的数据事实分开表达。
+- 本项目不提供投资建议或收益承诺。
 
-- **本机服务：** FQGate 默认监听 `127.0.0.1:17281`，无需为 AI 工具开放公网端口。
-- **统一连接：** 一个 FQGate 实例可以同时服务多个 AI 工具，减少重复登录和重复初始化。
-- **稳定接口：** 行情、资讯和交互界面通过统一协议接入，并提供明确的超时、错误码和请求标识。
-- **可验证安装：** 正式版本、文件大小和 SHA-256 均由稳定版清单提供，安装完成还需通过工具列表或健康检查验证。
-
-插件已提供行情登录、个股行情、资讯、多股行情和 Level-2 逐笔数据界面。界面直接连接本机 FQGate，不提供模拟数据；是否显示相应内容，取决于登录状态、账号权限和数据源可用性。
-
-## 数据、隐私与安全
-
-FQGate 默认只监听当前电脑的本机地址，Agent 不会连接公网或局域网中的 FQGate 地址。项目维护者不会通过本插件收集你的行情查询结果或登录凭证。
-
-使用云端 AI 服务时，发送给该服务的对话和工具结果可能受其隐私政策与设置约束。请在使用前阅读[隐私政策](./docs/legal/PRIVACY.md)与[使用条款](./docs/legal/TERMS.md)。
-
-本项目不提供个股推荐、收益预测或投资建议。AI 生成的内容可能存在错误或延迟，行情及证券信息请以数据提供方、证券公司和交易所的正式记录为准。
-
-## 文档与交流
-
-- 本机接口文档：启动 FQGate 后访问 [127.0.0.1:17281/docs](http://127.0.0.1:17281/docs)
-- 集成信息与兼容关系：[fqgate/README.md](./fqgate/README.md)
-- 当前版本说明：[RELEASE_NOTES.md](./RELEASE_NOTES.md)
-- MCP Apps 界面项目：[AI-plugins/ui-apps](./AI-plugins/ui-apps/README.md)
-- 架构设计：[docs/架构设计.md](./docs/架构设计.md)
-- QQ 群：[免费 AI 量化数据](https://qm.qq.com/q/ZQSuiYQZ4Q)，群号：`14546787`
-- 问题反馈：[GitHub Issues](https://github.com/fqgate/FQGate-agent/issues)
-
-微信群二维码会定期失效；如果下方二维码无法使用，请先加入 QQ 群或提交 Issue 提醒维护者更新。
-
-<p align="center">
-  <img src="./assets/community/wechat-agent-group-qr.png" alt="FQGate Agent 微信交流群二维码" width="280">
-</p>
-
-## 支持项目
-
-<p align="center">
-  <a href="./assets/support/support-banner.png">
-    <img src="./assets/support/support-banner.png" alt="支持 FQGate 与开源 Agent 项目" width="100%">
-  </a>
-</p>
-
-如果 FQGate 和开源 Agent 项目对你有帮助，欢迎自愿赞赏支持。赞赏不会解锁任何功能、数据权限、投资建议、问题处理优先级或后续服务承诺。
-
-赞赏者：<img src="./assets/sponsors/feng-kevin.jpg" alt="峰-Kevin" width="32" height="32"> **峰-Kevin** · <img src="./assets/sponsors/adong.jpg" alt="阿东" width="32" height="32"> **阿东** · <img src="./assets/sponsors/xingguang.jpg" alt="星光" width="32" height="32"> **星光** · <img src="./assets/sponsors/xu.jpg" alt="許" width="32" height="32"> **許** · <img src="./assets/sponsors/xuhao.jpg" alt="序号" width="32" height="32"> **序号** · <img src="./assets/sponsors/ice.jpg" alt="ICE" width="32" height="32"> **ICE** · <img src="./assets/sponsors/u_u.jpg" alt="U_U" width="32" height="32"> **U_U** · <img src="./assets/sponsors/wd.jpg" alt="wd" width="32" height="32"> **wd** · <img src="./assets/sponsors/betterme.png" alt="@BetterMe（借钱勿扰）" width="32" height="32"> **@BetterMe（借钱勿扰）**
-
-## 开源与许可
-
-AI 插件入口、安装适配、技能、界面组件和可选 SDK 依据 [AGPL-3.0-only](./LICENSE) 开源。FQGate 编译包适用其随包许可，详细边界见[法律与许可说明](./docs/legal/)。
-
-这是一个由独立开发者维护的非官方项目，与同花顺及其关联公司不存在授权、合作或背书关系。FQGate 和 Agent 不会增加任何账号的数据权限，实际可用范围仍以相应账号及服务权限为准。
+插件、Skill 与 MCP Apps 源码依据 [AGPL-3.0-only](./LICENSE) 开源。FQGate 主程序安装包适用其随包许可；完整说明见[法律文档](./docs/legal/)。

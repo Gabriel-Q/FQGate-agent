@@ -3,155 +3,79 @@ name: 发布 MCP Apps
 on:
   workflow_dispatch:
     inputs:
-      bump:
-        description: 版本升级类型；major 也可以只是进入稳定版
+      version:
+        description: 必须与 mcp-apps/mcp-apps/apps.json 的 bundleVersion 一致
         required: true
-        default: patch
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
-          - custom
-      custom_version:
-        description: 选择 custom 时填写严格语义版本，例如 1.0.0
-        required: false
         type: string
-      minimum_fqgate_version:
-        description: 最低支持的 FQGate 版本
-        required: true
-        default: 0.1.0
-        type: string
-  push:
-    tags:
-      - mcp-apps-release-*
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: fqgate-mcp-apps-release
   cancel-in-progress: false
 
 jobs:
-  prepare:
-    name: 全自动构建、签名并发布到主分支
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+  publish:
+    name: 构建、签名并更新 FQGate-releases
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    # 该环境只用于隔离正式签名私钥，不配置 required reviewers。
-    # 正式发布标签或 workflow_dispatch 本身就是发布授权，避免流程停在 waiting。
     environment: mcp-apps-production
     steps:
-      - name: 检出主分支
+      - name: 检出 Agent 源码
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: main
-          fetch-depth: 0
+          path: agent
+      - name: 检出正式发行仓库
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: fqgate/FQGate-releases
+          token: ${{ secrets.FQGATE_RELEASES_TOKEN }}
+          path: releases
+      - name: 检出 FQGate 公钥
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: fqgate/FQGate
+          path: fqgate
       - name: 准备 Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: AI-plugins/ui-apps/package-lock.json
-      - name: 安装 UI 依赖
-        run: npm --prefix AI-plugins/ui-apps ci
-      - name: 计算 MCP Apps 新版本
-        id: version
+          cache-dependency-path: agent/mcp-apps/package-lock.json
+      - name: 核对发布版本
+        working-directory: agent
         env:
-          RELEASE_BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
-          CUSTOM_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_version || '' }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          arguments=(--component mcp-apps --bump "$RELEASE_BUMP")
-          if [ -n "$CUSTOM_VERSION" ]; then arguments+=(--custom-version "$CUSTOM_VERSION"); fi
-          version="$(node scripts/release/resolve-release-version.mjs "${arguments[@]}")"
-          test -n "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-      - name: 校验正式发布标签
-        if: github.event_name == 'push'
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          configured="$(node -p "require('./mcp-apps/mcp-apps/apps.json').bundleVersion")"
+          test "$configured" = "$REQUESTED_VERSION"
+          printf '%s' "$configured" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+      - name: 安装依赖并运行门禁
+        working-directory: agent
         run: |
-          expected_tag="mcp-apps-release-${RELEASE_VERSION}"
-          if [ "$RELEASE_TAG" != "$expected_tag" ]; then
-            echo "::error::发布标签 $RELEASE_TAG 与计算出的 MCP Apps 版本 $RELEASE_VERSION 不一致，应为 $expected_tag"
-            exit 1
-          fi
-      - name: 更新 MCP Apps 版本
-        env:
-          MINIMUM_FQGATE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.minimum_fqgate_version || '0.1.0' }}
-        run: >-
-          node AI-plugins/ui-apps/scripts/prepare-mcp-apps-version.mjs
-          --version "${{ steps.version.outputs.version }}"
-          --minimum-fqgate-version "$MINIMUM_FQGATE_VERSION"
-      - name: 运行无正式密钥测试
-        run: npm --prefix AI-plugins/ui-apps run test:mcp-apps
-      - name: 使用正式密钥生成签名版本
+          npm --prefix mcp-apps ci
+          npm test
+      - name: 生成签名发布目录
+        working-directory: agent
         env:
           FQGATE_MCP_APPS_ED25519_PRIVATE_KEY: ${{ secrets.FQGATE_MCP_APPS_ED25519_PRIVATE_KEY }}
-        run: npm run release:mcp-apps
-      - name: 使用 FQGate 公钥验证发布目录
         run: >-
-          node AI-plugins/ui-apps/scripts/verify-mcp-apps-release.mjs
-          --release-root fqgate/mcp-apps
-          --public-key-file fqgate/mcp-apps/mcp-apps-ed25519-public.pem
-          --version "${{ steps.version.outputs.version }}"
-      - name: 发布到主分支
+          npm run release:mcp-apps --
+          --output ../releases/releases/v2/mcp-apps
+      - name: 用主程序内置公钥验收
+        working-directory: agent
+        run: >-
+          node mcp-apps/scripts/verify-mcp-apps-release.mjs
+          --release-root ../releases/releases/v2/mcp-apps
+          --public-key-file ../fqgate/assets/release/mcp-apps-ed25519-public.pem
+          --version "${{ inputs.version }}"
+      - name: 提交稳定通道
+        working-directory: releases
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add AI-plugins/ui-apps/mcp-apps/apps.json fqgate/mcp-apps
-          git commit -m "发布 MCP Apps ${{ steps.version.outputs.version }}"
+          git add releases/v2/mcp-apps
+          git diff --cached --check
+          git commit -m "发布 MCP Apps ${{ inputs.version }}"
           git push origin HEAD:main
-      - name: 验证 GitHub 稳定入口已更新
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -euo pipefail
-          root="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/fqgate/mcp-apps"
-          stable_file="$RUNNER_TEMP/mcp-apps-stable.json"
-          manifest_file="$RUNNER_TEMP/mcp-apps-manifest.json"
-
-          for attempt in $(seq 1 12); do
-            cache_buster="${GITHUB_RUN_ID}-${attempt}"
-            if curl --fail --silent --show-error --location \
-              "${root}/stable.json?run=${cache_buster}" -o "$stable_file" \
-              && node - "$stable_file" "$RELEASE_VERSION" <<'NODE'
-          const fs = require("node:fs");
-          const [file, expected] = process.argv.slice(2);
-          const stable = JSON.parse(fs.readFileSync(file, "utf8"));
-          if (stable.bundleVersion !== expected || stable.manifest !== `releases/${expected}/manifest.json`) {
-            process.exit(1);
-          }
-          NODE
-            then
-              if curl --fail --silent --show-error --location \
-                "${root}/releases/${RELEASE_VERSION}/manifest.json?run=${cache_buster}" \
-                -o "$manifest_file" \
-                && node - "$manifest_file" "$RELEASE_VERSION" <<'NODE'
-          const fs = require("node:fs");
-          const [file, expected] = process.argv.slice(2);
-          const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
-          if (manifest.bundleVersion !== expected || manifest.channel !== "stable") {
-            process.exit(1);
-          }
-          NODE
-              then
-                echo "GitHub 稳定入口已发布 MCP Apps ${RELEASE_VERSION}。"
-                exit 0
-              fi
-            fi
-            sleep 5
-          done
-
-          echo "::error::GitHub 稳定入口在等待后仍未指向 MCP Apps ${RELEASE_VERSION}"
-          exit 1
-
-  sync-gitee:
-    name: 同步 MCP Apps 到 Gitee
-    needs: prepare
-    if: needs.prepare.result == 'success'
-    uses: ./.github/workflows/sync-gitee.yml
-    secrets: inherit

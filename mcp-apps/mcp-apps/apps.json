@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "component": "fqgate-mcp-apps",
+  "bundleVersion": "0.4.0",
+  "minimumFqgateVersion": "2.0.0",
+  "apps": [
+    {
+      "id": "candle",
+      "resourceUri": "ui://fqgate/0.4.0/candle.html",
+      "file": "candle.html",
+      "title": "个股 K 线行情",
+      "description": "展示证券 K 线、盘口与成交明细。",
+      "toolPaths": [
+        "/v2/market/bars",
+        "/v2/market/intraday",
+        "/v2/market/trade-prints",
+        "/v2/market/order-books/five-level",
+        "/v2/market/level2/order-books/ten-level",
+        "/v2/market/level2/order-book-rankings"
+      ],
+      "preview": {
+        "entryTool": "fqgate_bar_series",
+        "inputs": [
+          {
+            "key": "security",
+            "kind": "mainland-security",
+            "label": "证券代码",
+            "defaultValue": "600519"
+          }
+        ],
+        "defaultArguments": {
+          "interval": "day",
+          "count": 160,
+          "adjustment": ""
+        }
+      }
+    },
+    {
+      "id": "information",
+      "resourceUri": "ui://fqgate/0.4.0/information.html",
+      "file": "information.html",
+      "title": "个股资讯",
+      "description": "展示指定证券的资讯列表、分类和阅读入口。",
+      "toolPaths": [
+        "/v2/information/articles"
+      ],
+      "preview": {
+        "entryTool": "fqgate_information_articles",
+        "inputs": [
+          {
+            "key": "security",
+            "kind": "mainland-security",
+            "label": "证券代码",
+            "defaultValue": "600519"
+          }
+        ],
+        "defaultArguments": {}
+      }
+    },
+    {
+      "id": "market-quotes",
+      "resourceUri": "ui://fqgate/0.4.0/market-quotes.html",
+      "file": "market-quotes.html",
+      "title": "实时行情面板",
+      "description": "展示一组证券的实时行情与连接状态。",
+      "toolPaths": [
+        "/v2/market/quotes/mainland"
+      ],
+      "preview": {
+        "entryTool": "fqgate_quote_mainland",
+        "inputs": [
+          {
+            "key": "securities",
+            "kind": "mainland-security-list",
+            "label": "证券代码",
+            "defaultValue": [
+              "600519",
+              "000001",
+              "300750"
+            ]
+          }
+        ],
+        "defaultArguments": {}
+      }
+    },
+    {
+      "id": "order-flow",
+      "resourceUri": "ui://fqgate/0.4.0/order-flow.html",
+      "file": "order-flow.html",
+      "title": "L2 - 逐笔委托",
+      "description": "展示 Level-2 逐笔委托与撤单数据。",
+      "toolPaths": [
+        "/v2/market/level2/order-events",
+        "/v2/market/level2/trade-ticks",
+        "/v2/market/level2/cancellations/buy",
+        "/v2/market/level2/cancellations/sell"
+      ],
+      "preview": {
+        "entryTool": "fqgate_level2_order_events",
+        "inputs": [
+          {
+            "key": "security",
+            "kind": "mainland-security",
+            "label": "证券代码",
+            "defaultValue": "600519"
+          }
+        ],
+        "defaultArguments": {}
+      }
+    }
+  ]
+}

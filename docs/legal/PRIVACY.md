@@ -1,36 +1,14 @@
 # 隐私政策
 
-更新日期：2026 年 9 月 9 日
+本插件把 AI 工具连接到用户电脑上运行的 FQGate，默认地址为 `http://127.0.0.1:17281/mcp`。项目维护者不运营接收用户行情查询、证券账号或 AI 对话内容的远程服务。
 
-## 本机处理
+插件清单和 Skill 本身不保存密码、验证码、证券账号、持仓或会话凭据。MCP Apps 只展示 FQGate 工具返回的数据，不把结果发送给项目维护者。
 
-本项目不运营接收行情、账户或交易数据的远程服务器。FQGate 在用户电脑上连接行情与交易服务，并通过仅监听回环地址的接口把结果交给当前电脑上的 AI 客户端或程序。
+FQGate 桌面端的“AI 接入”会读取 Codex 或 Claude Code 官方 CLI 返回的版本、Marketplace 和插件状态。执行安装前会在 FQGate 用户数据目录保存相关配置文件的本机备份和资源所有权记录：
 
-V2 Agent 启动器只读取 FQGate 可执行文件路径、本机 MCP 地址和版本，不读取或保存行情密码、资金账号、交易密码、短信验证码、访问令牌、持仓或委托内容。默认共享配置为：
+- macOS：`~/Library/Application Support/FQGate/agent-access/`
+- Windows：`%LOCALAPPDATA%\FQGate\agent-access\`
 
-- Windows：`%LOCALAPPDATA%\fqgate\agent-plugin.json`
-- macOS：`~/Library/Application Support/fqgate/agent-plugin.json`
+这些文件只用于计划校验、失败撤销和受控卸载，不会上传。删除 FQGate 用户数据前，应先在桌面端移除由 FQGate 安装的 AI 插件接入。
 
-FQGate 自身的登录信息、日志和安全策略以其随包文档为准。
-
-## 必要网络连接
-
-- FQGate 会按功能需要连接同花顺、证券公司或相关数据服务；问财查询会发送到相应服务。
-- 下载或更新时可能访问 GitHub、Gitee 或其他明确登记的发行地址。
-- 云端 AI 客户端可能把用户问题和工具返回结果发送给其模型服务；这由用户选择的服务及其隐私政策负责。
-
-本项目不会把 FQGate MCP 配置成公网或局域网地址，也不会自动建立端口映射、内网穿透或反向代理。
-
-## 删除数据
-
-卸载单个 AI 入口只删除该入口管理的文件，不删除共享 FQGate 配置。用户明确要移除所有 Agent 连接配置时，可以运行：
-
-```powershell
-node scripts/configure-fqgate.mjs uninstall --json
-```
-
-FQGate 程序、登录状态和日志需要按 FQGate 随包说明单独处理。
-
-## 安全联系
-
-不要在 Issue、聊天、截图或日志附件中提交证券账号、密码、验证码、完整持仓和交易明细。安全问题请使用 [GitHub 私密安全报告](https://github.com/fqgate/FQGate-agent/security/advisories/new)。
+使用云端 AI 服务时，对话内容和工具结果可能由该服务处理，适用相应服务的隐私政策。不要在 Issue、聊天、截图或日志附件中提交账号、密码、验证码、完整持仓或其他敏感信息。安全问题请使用 [GitHub 私密安全报告](https://github.com/fqgate/FQGate-agent/security/advisories/new)。

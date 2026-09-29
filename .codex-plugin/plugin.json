@@ -1,0 +1,52 @@
+{
+  "name": "fqgate-agent",
+  "version": "1.0.0",
+  "description": "FQGate 官方 AI 插件，为 Codex 提供本机实时行情、K 线、Level-2、资讯与证券研究能力。",
+  "author": {
+    "name": "zhuyifang",
+    "url": "https://github.com/zhuyifang"
+  },
+  "homepage": "https://github.com/fqgate/FQGate-agent",
+  "repository": "https://github.com/fqgate/FQGate-agent",
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "FQGate",
+    "tonghuasun-agent",
+    "同花顺",
+    "MCP",
+    "A股",
+    "实时行情",
+    "K线",
+    "Level-2",
+    "证券研究",
+    "Codex"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "同花顺免费开源AI插件FQGate",
+    "shortDescription": "本机实时行情、K线、Level-2与证券研究",
+    "longDescription": "连接当前电脑运行的 FQGate，通过专业工作流查询和分析实时行情、K 线、盘口、Level-2、资讯与重大事件。FQGate 2.0 不向 Agent 暴露交易操作。",
+    "developerName": "zhuyifang",
+    "category": "Finance",
+    "capabilities": [
+      "Read",
+      "Local MCP",
+      "Market Data",
+      "Research"
+    ],
+    "websiteURL": "https://github.com/fqgate/FQGate-agent",
+    "privacyPolicyURL": "https://github.com/fqgate/FQGate-agent/blob/main/docs/legal/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/fqgate/FQGate-agent/blob/main/docs/legal/TERMS.md",
+    "brandColor": "#F22618",
+    "composerIcon": "./assets/brand/fqgate-app-icon.svg",
+    "logo": "./assets/brand/fqgate-app-icon.svg",
+    "logoDark": "./assets/brand/fqgate-app-icon.svg",
+    "defaultPrompt": [
+      "分析这只股票当前的实时行情与趋势。",
+      "筛选符合条件的股票并核验最新盘面。",
+      "解释这只股票今天的盘口和资金行为。",
+      "梳理这只股票近期新闻、重大事件与价格变化。"
+    ]
+  }
+}

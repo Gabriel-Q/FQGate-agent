@@ -1,0 +1,20 @@
+{
+  "name": "fqgate-official",
+  "interface": {
+    "displayName": "FQGate 官方插件市场"
+  },
+  "plugins": [
+    {
+      "name": "fqgate-agent",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Finance"
+    }
+  ]
+}
