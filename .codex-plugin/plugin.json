@@ -24,7 +24,7 @@
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "同花顺免费开源AI插件FQGate",
+    "displayName": "FQGate-股票助手",
     "shortDescription": "本机实时行情、K线、Level-2与证券研究",
     "longDescription": "连接当前电脑运行的 FQGate，通过专业工作流查询和分析实时行情、K 线、盘口、Level-2、资讯与重大事件。FQGate 2.0 不向 Agent 暴露交易操作。",
     "developerName": "zhuyifang",
