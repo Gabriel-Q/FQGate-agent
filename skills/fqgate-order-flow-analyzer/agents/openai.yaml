@@ -1,0 +1,11 @@
+interface:
+  display_name: "同花顺盘口与逐笔分析"
+  short_description: "分时、盘口、逐笔成交与Level-2微观结构"
+  default_prompt: "使用 $fqgate-order-flow-analyzer 分析这只股票当前的盘口和成交行为。"
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "fqgate"
+      description: "当前电脑运行的 FQGate MCP 服务"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:17281/mcp"

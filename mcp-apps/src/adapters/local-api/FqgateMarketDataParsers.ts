@@ -1,0 +1,487 @@
+import type {
+  MarketDepthLevel,
+  MarketDepthSide,
+  MarketRealtimePoint,
+  MarketRealtimeQuote,
+  MarketTransaction,
+  PanoramicOrderBookLevel,
+} from "@/shared/contracts";
+
+export type JsonObject = Record<string, unknown>;
+
+export interface FqgateMarketDataPayload {
+  items?: unknown;
+  records?: unknown;
+  semantic_records?: unknown;
+  depth?: Array<{
+    security?: string | null;
+    bids?: FqgateDepthLevel[];
+    asks?: FqgateDepthLevel[];
+  }>;
+}
+
+export interface FqgateStandardQuoteData {
+  items: FqgateStandardQuote[];
+}
+
+export interface FqgateStandardOrderBookData {
+  items: FqgateStandardOrderBook[];
+}
+
+export interface FqgatePriceRankingData {
+  items: Array<{
+    security?: { market?: string; code?: string };
+    side?: unknown;
+    position?: unknown;
+    price?: unknown;
+    quantity?: unknown;
+  }>;
+}
+
+export interface FqgateStandardQuote {
+  security: {
+    market: string;
+    code: string;
+  };
+  security_name?: string;
+  previous_close?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  latest?: number;
+  volume?: number;
+  transaction_amount?: number;
+}
+
+interface FqgateStandardOrderBook {
+  security: {
+    market: string;
+    code: string;
+  };
+  bids: FqgateDepthLevel[];
+  asks: FqgateDepthLevel[];
+}
+
+interface FqgateDepthLevel {
+  level?: number;
+  price?: number | null;
+  volume?: number | null;
+}
+
+const BASIC_BID_FIELDS: ReadonlyArray<readonly [string, string]> = [
+  ["24", "25"],
+  ["26", "27"],
+  ["28", "29"],
+  ["150", "151"],
+  ["154", "155"],
+];
+const BASIC_ASK_FIELDS: ReadonlyArray<readonly [string, string]> = [
+  ["30", "31"],
+  ["32", "33"],
+  ["34", "35"],
+  ["152", "153"],
+  ["156", "157"],
+];
+
+export const MARKET_TRANSACTION_LIMIT = 500;
+
+export function parseStandardOrderBook(
+  data: FqgateStandardOrderBookData,
+  levelCount: 5 | 10,
+): {
+  bids: MarketDepthLevel[];
+  asks: MarketDepthLevel[];
+} {
+  const snapshot = data.items[0];
+  return {
+    bids: normalizeStandardDepthLevels(snapshot?.bids, levelCount),
+    asks: normalizeStandardDepthLevels(snapshot?.asks, levelCount),
+  };
+}
+
+export function parsePanoramicOrderBook(data: FqgatePriceRankingData): {
+  bids: PanoramicOrderBookLevel[];
+  asks: PanoramicOrderBookLevel[];
+} {
+  const bids: PanoramicOrderBookLevel[] = [];
+  const asks: PanoramicOrderBookLevel[] = [];
+  for (const value of data.items ?? []) {
+    const side = value.side === "buy" || value.side === "sell"
+      ? value.side
+      : undefined;
+    const position = finiteNumber(value.position);
+    const price = finiteNumber(value.price);
+    const volume = finiteNumber(value.quantity);
+    if (
+      !side ||
+      position === null ||
+      !Number.isInteger(position) ||
+      position < 1 ||
+      price === null ||
+      volume === null
+    ) {
+      continue;
+    }
+    const item: PanoramicOrderBookLevel = {
+      side,
+      position,
+      price,
+      volume,
+    };
+    (side === "buy" ? bids : asks).push(item);
+  }
+  bids.sort((left, right) => left.position - right.position);
+  asks.sort((left, right) => left.position - right.position);
+  return { bids, asks };
+}
+
+export function parseStandardRealtimeQuote(
+  data: FqgateStandardQuoteData,
+): MarketRealtimeQuote | undefined {
+  const quote = data.items[0];
+  if (!quote) return undefined;
+  const latestPrice = semanticNumber(quote.latest);
+  const volume = semanticNumber(quote.volume);
+  const amount = semanticNumber(quote.transaction_amount);
+  if (latestPrice === null && volume === null && amount === null)
+    return undefined;
+  return {
+    updatedAt: Date.now(),
+    securityName: textValue(quote.security_name),
+    latestPrice,
+    previousClose: semanticNumber(quote.previous_close),
+    open: semanticNumber(quote.open),
+    high: semanticNumber(quote.high),
+    low: semanticNumber(quote.low),
+    volume,
+    amount,
+    turnoverRate: null,
+  };
+}
+
+function textValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/** V1 Level-2 实时推送仍使用 depth 包装；仅供尚未标准化的实时链路。 */
+export function parseLevel2Depth(data: FqgateMarketDataPayload): {
+  bids: MarketDepthLevel[];
+  asks: MarketDepthLevel[];
+} {
+  const snapshot = data.depth?.[0];
+  return {
+    bids: normalizeDepthLevels(snapshot?.bids),
+    asks: normalizeDepthLevels(snapshot?.asks),
+  };
+}
+
+/** V1 普通实时推送仍使用五档数字字段；仅供尚未标准化的实时链路。 */
+export function parseBasicDepth(data: FqgateMarketDataPayload): {
+  bids: MarketDepthLevel[];
+  asks: MarketDepthLevel[];
+} {
+  const record = firstRawRecord(data.records);
+  return {
+    bids: parseRawDepth(record, BASIC_BID_FIELDS),
+    asks: parseRawDepth(record, BASIC_ASK_FIELDS),
+  };
+}
+
+export function parseBasicTransactions(
+  data: FqgateMarketDataPayload,
+): MarketTransaction[] {
+  if (Array.isArray(data.items))
+    return parseStandardTransactions(data.items, "basic");
+  return flattenRawRecords(data.records)
+    .map((record, index) => {
+      const timestamp = strictTimestamp(fieldNumber(record, "1"));
+      const price = fieldNumber(record, "10");
+      const volume = fieldNumber(record, "49");
+      return {
+        id: ["basic", timestamp, price, volume, index].join(":"),
+        timestamp,
+        price,
+        volume,
+        amount: fieldNumber(record, "19"),
+        side: basicTransactionSide(fieldNumber(record, "12")),
+      } satisfies MarketTransaction;
+    })
+    .filter(hasTransactionValue)
+    .sort(sortTransactionsNewestFirst)
+    .slice(0, MARKET_TRANSACTION_LIMIT);
+}
+
+export function parseLevel2Transactions(
+  data: FqgateMarketDataPayload,
+): MarketTransaction[] {
+  if (Array.isArray(data.items))
+    return parseStandardTransactions(data.items, "level2");
+  const batches = Array.isArray(data.semantic_records)
+    ? data.semantic_records
+    : [];
+  const result: MarketTransaction[] = [];
+  for (const batch of batches) {
+    if (!Array.isArray(batch)) continue;
+    for (const item of batch) {
+      const semantic = asObject(item);
+      const values = asObject(semantic?.values);
+      const derived = asObject(semantic?.derived);
+      if (!values) continue;
+      const timestamp =
+        derivedTimestamp(derived) ??
+        strictTimestamp(fieldValueNumber(values.trade_time));
+      const price = fieldValueNumber(values.price);
+      const volume = fieldValueNumber(values.volume);
+      const amount = fieldValueNumber(values.amount);
+      const sourceId = fieldValue(values.source_tick_id);
+      result.push({
+        id: ["level2", sourceId, timestamp, price, volume].join(":"),
+        timestamp,
+        price,
+        volume,
+        amount,
+        side: semanticSide(derived?.side),
+      });
+    }
+  }
+  return result
+    .filter(hasTransactionValue)
+    .sort(sortTransactionsNewestFirst)
+    .slice(0, MARKET_TRANSACTION_LIMIT);
+}
+
+function parseStandardTransactions(
+  items: unknown[],
+  prefix: "basic" | "level2",
+): MarketTransaction[] {
+  return items
+    .flatMap((value, index) => {
+      const item = asObject(value);
+      if (!item) return [];
+      const timestamp = isoTimestamp(item.event_time);
+      const price = semanticNumber(item.price);
+      const volume = semanticNumber(item.quantity ?? item.volume);
+      const amount = semanticNumber(item.transaction_amount ?? item.amount);
+      const sourceId =
+        item.trade_id ?? item.transaction_sequence ?? item.record_id ?? index;
+      return [
+        {
+          id: [prefix, sourceId, timestamp, price, volume].join(":"),
+          timestamp,
+          price,
+          volume,
+          amount,
+          side: semanticSide(item.side),
+        } satisfies MarketTransaction,
+      ];
+    })
+    .filter(hasTransactionValue)
+    .sort(sortTransactionsNewestFirst)
+    .slice(0, MARKET_TRANSACTION_LIMIT);
+}
+
+/** V1 Quote 实时推送解析；V2 快照必须使用 parseStandardRealtimeQuote。 */
+export function parseRealtimeQuote(
+  data: FqgateMarketDataPayload,
+): MarketRealtimeQuote | undefined {
+  const record = firstRawRecord(data.records);
+  if (!record) return undefined;
+  const latestPrice = fieldNumber(record, "10");
+  const volume = fieldNumber(record, "13");
+  const amount = fieldNumber(record, "19");
+  if (latestPrice === null && volume === null && amount === null)
+    return undefined;
+  return {
+    updatedAt: Date.now(),
+    latestPrice,
+    previousClose: fieldNumber(record, "6"),
+    open: fieldNumber(record, "7"),
+    high: fieldNumber(record, "8"),
+    low: fieldNumber(record, "9"),
+    volume,
+    amount,
+    turnoverRate: fieldNumber(record, "1968584"),
+  };
+}
+
+export function parseRealtimePoints(
+  data: FqgateMarketDataPayload,
+): MarketRealtimePoint[] {
+  if (Array.isArray(data.items)) {
+    return data.items
+      .flatMap((value) => {
+        const record = asObject(value);
+        if (!record) return [];
+        const timestamp = isoTimestamp(record.event_time);
+        const price = semanticNumber(record.latest);
+        if (timestamp === null || price === null) return [];
+        return [
+          {
+            timestamp,
+            price,
+            volume: semanticNumber(record.volume),
+            amount: semanticNumber(record.transaction_amount),
+          } satisfies MarketRealtimePoint,
+        ];
+      })
+      .sort((left, right) => left.timestamp - right.timestamp);
+  }
+  return flattenRawRecords(data.records)
+    .flatMap((record) => {
+      const timestamp = strictTimestamp(fieldNumber(record, "1"));
+      const price = fieldNumber(record, "10");
+      if (timestamp === null || price === null) return [];
+      return [
+        {
+          timestamp,
+          price,
+          volume: fieldNumber(record, "13"),
+          amount: fieldNumber(record, "19"),
+        },
+      ];
+    })
+    .sort((left, right) => left.timestamp - right.timestamp);
+}
+
+function normalizeStandardDepthLevels(
+  levels: FqgateDepthLevel[] | undefined,
+  levelCount: 5 | 10,
+): MarketDepthLevel[] {
+  const byLevel = new Map(
+    (levels ?? [])
+      .filter(
+        (item) =>
+          Number.isInteger(item.level) &&
+          item.level! >= 1 &&
+          item.level! <= levelCount,
+      )
+      .map((item) => [item.level!, item]),
+  );
+  return Array.from({ length: levelCount }, (_, index) => {
+    const level = index + 1;
+    const item = byLevel.get(level);
+    return {
+      level,
+      price: semanticNumber(item?.price),
+      volume: semanticNumber(item?.volume),
+    };
+  });
+}
+
+function normalizeDepthLevels(
+  levels: FqgateDepthLevel[] | undefined,
+): MarketDepthLevel[] {
+  const byLevel = new Map(
+    (levels ?? [])
+      .filter(
+        (item) =>
+          Number.isInteger(item.level) && item.level! >= 1 && item.level! <= 10,
+      )
+      .map((item) => [item.level!, item]),
+  );
+  return Array.from({ length: 10 }, (_, index) => {
+    const level = index + 1;
+    const item = byLevel.get(level);
+    return {
+      level,
+      price: finiteNumber(item?.price),
+      volume: finiteNumber(item?.volume),
+    };
+  });
+}
+
+function parseRawDepth(
+  record: JsonObject | undefined,
+  fields: ReadonlyArray<readonly [string, string]>,
+): MarketDepthLevel[] {
+  return fields.map(([priceField, volumeField], index) => ({
+    level: index + 1,
+    price: record ? fieldNumber(record, priceField) : null,
+    volume: record ? fieldNumber(record, volumeField) : null,
+  }));
+}
+
+function flattenRawRecords(value: unknown): JsonObject[] {
+  if (!Array.isArray(value)) return [];
+  const result: JsonObject[] = [];
+  for (const batch of value) {
+    if (!Array.isArray(batch)) continue;
+    for (const record of batch) {
+      const object = asObject(record);
+      if (object) result.push(object);
+    }
+  }
+  return result;
+}
+
+function firstRawRecord(value: unknown): JsonObject | undefined {
+  return flattenRawRecords(value)[0];
+}
+
+function fieldNumber(record: JsonObject, fieldId: string): number | null {
+  return fieldValueNumber(record[fieldId]);
+}
+
+function fieldValueNumber(value: unknown): number | null {
+  return finiteNumber(fieldValue(value));
+}
+
+function fieldValue(value: unknown): unknown {
+  const object = asObject(value);
+  return object && "value" in object ? object.value : value;
+}
+
+function finiteNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function semanticNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function strictTimestamp(value: number | null): number | null {
+  if (value === null) return null;
+  if (value >= 1_000_000_000_000) return value;
+  if (value >= 1_000_000_000) return value * 1_000;
+  return null;
+}
+
+function isoTimestamp(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function derivedTimestamp(derived: JsonObject | undefined): number | null {
+  const timestamp = asObject(derived?.timestamp);
+  return strictTimestamp(finiteNumber(timestamp?.unix_milliseconds));
+}
+
+function basicTransactionSide(value: number | null): MarketDepthSide {
+  if (value === 5) return "buy";
+  if (value === 1) return "sell";
+  return "unknown";
+}
+
+function semanticSide(value: unknown): MarketDepthSide {
+  return value === "buy" || value === "sell" ? value : "unknown";
+}
+
+function hasTransactionValue(item: MarketTransaction): boolean {
+  return item.timestamp !== null || item.price !== null || item.volume !== null;
+}
+
+function sortTransactionsNewestFirst(
+  left: MarketTransaction,
+  right: MarketTransaction,
+): number {
+  return (right.timestamp ?? 0) - (left.timestamp ?? 0);
+}
+
+function asObject(value: unknown): JsonObject | undefined {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as JsonObject)
+    : undefined;
+}

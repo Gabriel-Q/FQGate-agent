@@ -1,5 +1,0 @@
-/dist/
-/node_modules/
-*.local
-*.tsbuildinfo
-vite.config.js

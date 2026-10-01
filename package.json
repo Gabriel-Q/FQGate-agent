@@ -1,7 +1,7 @@
 {
   "name": "fqgate-agent-workspace",
   "version": "1.0.0",
-  "description": "同花顺免费开源AI插件FQGate（原 tonghuasun-agent），面向多种 AI 工具提供本机 A 股行情、K 线、Level-2、资讯、账户查询与可选交易能力。",
+  "description": "FQGate 官方 Agent 插件：面向 Codex 与 Claude Code 提供本机行情、K 线、Level-2、资讯和研究工作流。",
   "keywords": [
     "fqgate",
     "tonghuasun-agent",
@@ -16,18 +16,18 @@
     "market-data",
     "kline",
     "level-2",
-    "quant-trading",
     "codex",
-    "claude-code",
-    "deepseek"
+    "claude-code"
   ],
   "private": true,
   "type": "module",
   "scripts": {
-    "build:mcp-apps": "npm --prefix AI-plugins/ui-apps run build:mcp-apps",
-    "build:website-demo": "npm --prefix AI-plugins/ui-apps run build:website",
-    "dev:publish": "npm --prefix AI-plugins/ui-apps run dev:publish",
-    "release:mcp-apps": "npm --prefix AI-plugins/ui-apps run release:mcp-apps --",
-    "test": "node --test installer/tests/fqgate-config.test.mjs tests/plugin-integration.test.mjs tests/external-installers.test.mjs tests/ai-tool-routing-evals.test.mjs scripts/release/versioning.test.mjs"
+    "build:mcp-apps": "npm --prefix mcp-apps run build:mcp-apps",
+    "build:website-demo": "npm --prefix mcp-apps run build:website",
+    "dev:publish": "npm --prefix mcp-apps run dev:publish",
+    "embed:mcp-apps": "npm --prefix mcp-apps run typecheck && node scripts/embed-mcp-apps.mjs",
+    "release:mcp-apps": "npm --prefix mcp-apps run release:mcp-apps --",
+    "test:plugin": "node --test tests/plugin-integration.test.mjs tests/ai-tool-routing-evals.test.mjs scripts/release/versioning.test.mjs",
+    "test": "npm run test:plugin && npm --prefix mcp-apps run test:mcp-apps"
   }
 }

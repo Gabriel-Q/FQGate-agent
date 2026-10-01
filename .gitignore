@@ -17,10 +17,7 @@ __pycache__/
 
 # 本机 MCP 与宿主配置
 **/.mcp.json
-!/AI-plugins/codex/.mcp.json
-!/AI-plugins/claude-code/.mcp.json
-!/AI-plugins/workbuddy/.mcp.json
-!/AI-plugins/zcode/.mcp.json
+!/.mcp.json
 **/.env
 **/.env.local
 **/.secrets/
