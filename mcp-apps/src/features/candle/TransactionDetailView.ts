@@ -16,7 +16,6 @@ import { VirtualRowList } from "./VirtualRowList";
 export class TransactionDetailView {
   readonly root = element("section", "market-detail-view transaction-detail");
 
-  private readonly title = element("strong", "market-detail-title", "成交明细");
   private readonly meta = element("span", "market-detail-meta", "等待读取");
   private readonly status = element("div", "market-detail-status");
   private readonly refreshButton = button("刷新", "market-detail-refresh");
@@ -29,16 +28,14 @@ export class TransactionDetailView {
   private version = 0;
   private hasLoaded = false;
 
-  constructor(
-    private readonly service: MarketDetailService,
-    onBack: () => void,
-  ) {
+  constructor(private readonly service: MarketDetailService) {
     this.root.hidden = true;
-    const toolbar = element("header", "market-detail-toolbar");
-    const back = button("‹ 盘口", "market-detail-back");
-    back.addEventListener("click", onBack);
+    const toolbar = element(
+      "header",
+      "market-detail-toolbar transaction-detail-toolbar",
+    );
     this.refreshButton.addEventListener("click", () => void this.load());
-    append(toolbar, back, this.title, this.meta, this.refreshButton);
+    append(toolbar, this.meta, this.refreshButton);
     const head = element("div", "transaction-detail-header");
     head.setAttribute("role", "row");
     for (const label of ["时间", "成交价", "成交量", "成交额", "方向"] as const) {
@@ -57,9 +54,9 @@ export class TransactionDetailView {
     this.security = { ...security };
     this.mode = mode;
     this.hasLoaded = false;
-    this.title.textContent = mode === "level2" ? "逐笔明细" : "成交明细";
-    this.root.setAttribute("aria-label", this.title.textContent);
-    this.list.root.setAttribute("aria-label", this.title.textContent);
+    const label = mode === "level2" ? "逐笔明细" : "成交明细";
+    this.root.setAttribute("aria-label", label);
+    this.list.root.setAttribute("aria-label", label);
     this.root.hidden = false;
     void this.load();
   }

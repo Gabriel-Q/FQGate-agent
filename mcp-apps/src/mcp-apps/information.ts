@@ -20,7 +20,12 @@ async function main(): Promise<void> {
     baseUrl: FQGATE_LOOPBACK_URL,
     fetch: bridge.fetch
   });
-  mountNativeApp(new InformationApp(requiredRoot(), service, security));
+  mountNativeApp(new InformationApp(
+    requiredRoot(),
+    service,
+    security,
+    (url) => runtime.openExternalUrl(url)
+  ));
 }
 
 void main().catch(showEntryError);

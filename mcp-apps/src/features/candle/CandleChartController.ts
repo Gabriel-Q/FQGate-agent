@@ -61,11 +61,13 @@ export class CandleChartController {
         horzLines: { color: lineColor }
       },
       crosshair: { mode: CrosshairMode.Normal },
-      rightPriceScale: { borderColor: lineColor },
+      rightPriceScale: { visible: false },
       timeScale: {
         borderColor: lineColor,
         timeVisible: isMinuteKlineInterval(data.interval),
         secondsVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
         tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) => formatTickMark(time, tickMarkType)
       },
       localization: {

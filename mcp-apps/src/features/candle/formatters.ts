@@ -1,6 +1,7 @@
 export function formatPrice(value: number | null | undefined): string {
   if (!Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("zh-CN", {
+    useGrouping: false,
     minimumFractionDigits: 2,
     maximumFractionDigits: 3
   }).format(value!);
@@ -27,6 +28,16 @@ export function formatCompact(value: number | null | undefined): string {
     notation: "compact",
     maximumFractionDigits: 2
   }).format(value!);
+}
+
+/** 按价格与委托股数计算盘口委托金额，返回不带货币符号的紧凑值。 */
+export function formatOrderBookAmount(
+  price: number | null | undefined,
+  volume: number | null | undefined,
+): string {
+  return Number.isFinite(price) && Number.isFinite(volume)
+    ? formatCompact(price! * volume!)
+    : "—";
 }
 
 export function formatCurrency(value: number | null | undefined): string {

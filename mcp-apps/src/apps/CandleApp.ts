@@ -247,8 +247,13 @@ export class CandleApp {
 
   private buildLayout(): void {
     const toolbar = element("header", "candle-toolbar");
-    const mark = element("span", "candle-mark", "FQ");
-    mark.setAttribute("aria-hidden", "true");
+    const brand = element("span", "candle-brand");
+    brand.setAttribute("role", "img");
+    brand.setAttribute("aria-label", "FQGate");
+    const brandLogo = element("img", "candle-brand__logo");
+    brandLogo.src = new URL("../assets/fqgate-logo.png", import.meta.url).href;
+    brandLogo.alt = "";
+    append(brand, brandLogo, element("span", "candle-brand__wordmark", "FQGate"));
     const heading = element("div", "candle-heading");
     heading.append(element("strong", "candle-heading__title", "个股 K 线"));
     const previewSource = this.options.previewSource;
@@ -287,7 +292,7 @@ export class CandleApp {
     this.refreshButton.addEventListener("click", () => void this.refreshAll());
     append(
       toolbar,
-      mark,
+      brand,
       heading,
       element("span", "candle-toolbar__spacer"),
       this.securityForm,

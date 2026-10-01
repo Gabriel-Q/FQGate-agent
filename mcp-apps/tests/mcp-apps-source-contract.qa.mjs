@@ -94,9 +94,50 @@ assert.doesNotMatch(
   /aspect-ratio/,
   "个股 K 线不得在宿主窗口内再固定画布比例",
 );
+const candleTitleStyle =
+  marketStyles.match(/\.candle-heading__title\s*\{([^}]*)\}/s)?.[1] ?? "";
+assert.match(
+  candleTitleStyle,
+  /border-radius:\s*999px/,
+  "个股 K 线应用名称必须使用胶囊外形",
+);
+assert.match(
+  candleTitleStyle,
+  /background:\s*var\(--accent-soft\)/,
+  "个股 K 线应用名称胶囊必须使用主题强调色背景",
+);
 const candleSource = readFileSync(
   join(sourceRoot, "apps", "CandleApp.ts"),
   "utf8",
+);
+assert.match(
+  candleSource,
+  /new URL\("\.\.\/assets\/fqgate-logo\.png", import\.meta\.url\)/,
+  "个股 K 线工具栏必须使用 FQGate 品牌图形",
+);
+assert.match(
+  candleSource,
+  /candle-brand__wordmark", "FQGate"/,
+  "个股 K 线工具栏品牌必须显示 FQGate 英文名称",
+);
+const candleChartSource = readFileSync(
+  join(sourceRoot, "features", "candle", "CandleChartController.ts"),
+  "utf8",
+);
+assert.match(
+  candleChartSource,
+  /fixLeftEdge:\s*true/,
+  "K 线时间轴不得拖动到首条数据左侧的空白区",
+);
+assert.match(
+  candleChartSource,
+  /fixRightEdge:\s*true/,
+  "K 线时间轴不得拖动到末条数据右侧的空白区",
+);
+assert.match(
+  candleChartSource,
+  /rightPriceScale:\s*\{\s*visible:\s*false\s*\}/,
+  "窄屏 K 线不得为右侧价格刻度保留独立栏位",
 );
 assert.match(
   candleSource,
@@ -121,9 +162,91 @@ const transactionSummarySource = readFileSync(
   join(sourceRoot, "features", "candle", "TransactionSummary.ts"),
   "utf8",
 );
+const orderBookSummarySource = readFileSync(
+  join(sourceRoot, "features", "candle", "OrderBookSummary.ts"),
+  "utf8",
+);
 assert.match(inspectorSource, /全景 500 档/);
-assert.match(inspectorSource, /mode === "level2" \? "十档" : "五档"/);
+assert.match(
+  inspectorSource,
+  /button\(\s*"成交明细",\s*"market-inspector-tab"/,
+  "盘口表头必须提供成交明细页签",
+);
+assert.match(
+  inspectorSource,
+  /tabs\.setAttribute\("role", "tablist"\)/,
+  "盘口与成交必须使用可访问的页签语义",
+);
+assert.match(inspectorSource, /tab\.setAttribute\("role", "tab"\)/);
+assert.match(inspectorSource, /tab\.setAttribute\("aria-controls", panelId\)/);
+assert.match(inspectorSource, /tab\.setAttribute\("aria-selected", String\(selected\)\)/);
+assert.match(
+  inspectorSource,
+  /event\.key === "ArrowRight"[\s\S]*?event\.key === "ArrowLeft"[\s\S]*?event\.key === "Home"[\s\S]*?event\.key === "End"/,
+  "盘口与成交页签必须支持桌面键盘导航",
+);
+assert.match(
+  inspectorSource,
+  /append\(\s*this\.root,\s*this\.header,\s*this\.summary,[\s\S]*?this\.transactionDetail\.root/,
+  "盘口与成交页签必须在两个内容面板切换时保持可见",
+);
+assert.match(inspectorSource, /mode === "level2" \? "十档盘口" : "五档盘口"/);
 assert.doesNotMatch(inspectorSource, />L1<|"L1"/);
+assert.match(
+  orderBookSummarySource,
+  /visibleDepthStrength\(bids, asks\)/,
+  "买卖强度条必须使用当前展示档位的统一委托金额口径",
+);
+assert.match(
+  orderBookSummarySource,
+  /cell\("金额"\)/,
+  "盘口第三列必须明确使用委托金额口径",
+);
+assert.match(
+  orderBookSummarySource,
+  /cell\(formatOrderBookAmount\(level\.price, level\.volume\), "numeric depth-volume"\)/,
+  "盘口每档委托金额必须由价格和股数计算",
+);
+assert.match(
+  orderBookSummarySource,
+  /formatCompact\(strength\.buyAmount\)[\s\S]*?formatCompact\(strength\.sellAmount\)/,
+  "买卖强度说明必须与盘口统一使用委托金额",
+);
+assert.doesNotMatch(
+  orderBookSummarySource,
+  /order-book-strength__(?:buy|sell)-label/,
+  "买卖强度条不得显示方向文字",
+);
+assert.match(
+  orderBookSummarySource,
+  /占 \$\{strength\.buyPercent\.toFixed\(1\)\}%[\s\S]*?占 \$\{strength\.sellPercent\.toFixed\(1\)\}%/,
+  "买卖强度的精确占比必须保留在辅助功能描述中",
+);
+assert.match(
+  orderBookSummarySource,
+  /row\.title = description/,
+  "无文字强度条必须通过悬停提示提供精确口径",
+);
+assert.match(
+  marketStyles,
+  /\.order-book-strength\s*\{[\s\S]*?height:\s*12px/,
+  "买卖强度分隔行必须保持紧凑高度",
+);
+assert.match(
+  marketStyles,
+  /\.order-book-strength__track\s*\{[\s\S]*?grid-template-columns:\s*var\(--buy-strength\) var\(--sell-strength\)/,
+  "买卖强度条必须按委买、委卖占比分割",
+);
+assert.match(
+  marketStyles,
+  /\.market-inspector-tab\[aria-selected="true"\]\s*\{[\s\S]*?color:\s*var\(--accent\)/,
+  "当前页签必须有独立的选中视觉状态",
+);
+assert.match(
+  marketStyles,
+  /\.market-inspector-tab\[aria-selected="true"\]::after\s*\{[\s\S]*?opacity:\s*1/,
+  "当前页签必须显示底部指示线",
+);
 assert.match(transactionSummarySource, /const BASIC_SUMMARY_ROWS = 6/);
 assert.match(transactionSummarySource, /const LEVEL2_SUMMARY_ROWS = 2/);
 assert.match(transactionSummarySource, /transactionSummaryRowLimit/);
@@ -192,6 +315,11 @@ const orderFlowSource = readFileSync(
 );
 assert.match(
   orderFlowSource,
+  /this\.frame\.root\.classList\.add\("order-flow-app"\)/,
+  "逐笔委托必须声明独立的全高布局根节点",
+);
+assert.match(
+  orderFlowSource,
   /this\.searchResults\.id\s*=\s*["']order-flow-search-results["'];\s*this\.setSearchResultsVisible\(false\);/,
   "逐笔委托的空搜索结果浮层必须默认关闭",
 );
@@ -199,6 +327,39 @@ assert.match(
   orderFlowSource,
   /this\.searchResults\.hidden\s*=\s*!visible;\s*this\.searchInput\.setAttribute\(["']aria-expanded["'],\s*String\(visible\)\);/,
   "搜索结果浮层的显示状态和无障碍状态必须统一维护",
+);
+assert.match(
+  marketStyles,
+  /\.order-flow-app\s*\{[\s\S]*?height:\s*100vh[\s\S]*?grid-template-rows:\s*26px minmax\(0, 1fr\)/,
+  "逐笔委托必须填满 MCP App 视口并把剩余高度交给内容区",
+);
+assert.match(
+  marketStyles,
+  /\.stream-table-scroll\s*\{[\s\S]*?height:\s*100%[\s\S]*?min-height:\s*0/,
+  "逐笔委托表格必须填满剩余空间并在内部滚动",
+);
+const informationSource = readFileSync(
+  join(sourceRoot, "apps", "InformationApp.ts"),
+  "utf8",
+);
+assert.match(
+  informationSource,
+  /element\("a", "information-item__action"\)/,
+  "有原文地址的资讯必须把整个条目作为链接",
+);
+assert.match(
+  informationSource,
+  /event\.preventDefault\(\);[\s\S]*?this\.openItem\(item\)/,
+  "资讯链接必须交给宿主打开系统浏览器",
+);
+const mcpRuntimeSource = readFileSync(
+  join(sourceRoot, "adapters", "mcp-app", "McpAppRuntime.ts"),
+  "utf8",
+);
+assert.match(
+  mcpRuntimeSource,
+  /this\.app\.openLink\(\{ url \}\)/,
+  "MCP App 外链必须使用标准 ui/open-link 请求",
 );
 
 const config = JSON.parse(

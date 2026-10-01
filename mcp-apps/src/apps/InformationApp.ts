@@ -5,8 +5,10 @@ import type {
   MarketSecurity
 } from "@/shared/contracts";
 import { AppFrame } from "@/ui/AppFrame";
-import { append, button, element, errorText, externalLink, replace } from "@/ui/dom";
+import { append, button, element, errorText, replace } from "@/ui/dom";
 import { ServiceRecoveryController } from "@/ui/ServiceRecoveryController";
+
+export type ExternalUrlOpener = (url: string) => Promise<void> | void;
 
 export class InformationApp {
   private readonly frame: AppFrame;
@@ -21,7 +23,8 @@ export class InformationApp {
   constructor(
     host: HTMLElement,
     private readonly service: InformationService,
-    private readonly security: MarketSecurity
+    private readonly security: MarketSecurity,
+    private readonly openExternalUrl: ExternalUrlOpener = openBrowserWindow
   ) {
     this.frame = new AppFrame(host, { refreshable: true, onRefresh: () => void this.load(true) });
     const toolbar = element("header", "panel-toolbar");
@@ -92,14 +95,43 @@ export class InformationApp {
 
   private renderItem(item: InformationItem): HTMLLIElement {
     const row = element("li", "information-item");
+    const content = item.url
+      ? element("a", "information-item__action")
+      : element("div", "information-item__content");
+    if (content instanceof HTMLAnchorElement && item.url) {
+      content.href = item.url;
+      content.target = "_blank";
+      content.rel = "noopener noreferrer";
+      content.setAttribute("aria-label", `在系统浏览器中打开：${item.title}`);
+      content.addEventListener("click", (event) => {
+        event.preventDefault();
+        void this.openItem(item);
+      });
+    }
     const meta = element("div", "information-item__meta");
     const time = element("time", "numeric", formatPublishedAt(item.publishedAt));
     if (item.publishedAt) time.dateTime = new Date(item.publishedAt).toISOString();
     append(meta, time, item.source ? element("span", "information-item__source", item.source) : null);
-    if (item.url) meta.append(externalLink("原文 ↗", item.url, "information-item__link"));
+    if (item.url) meta.append(element("span", "information-item__link", "原文 ↗"));
     const title = element("h2", "information-item__title", item.title);
-    append(row, meta, title, item.summary ? element("p", "information-item__summary", item.summary) : null);
+    append(
+      content,
+      meta,
+      title,
+      item.summary ? element("p", "information-item__summary", item.summary) : null
+    );
+    row.append(content);
     return row;
+  }
+
+  private async openItem(item: InformationItem): Promise<void> {
+    if (!item.url) return;
+    try {
+      await this.openExternalUrl(item.url);
+    } catch (reason) {
+      this.status.textContent = errorText(reason, "无法使用系统浏览器打开原文。");
+      this.status.classList.add("is-error");
+    }
   }
 
   private renderError(message: string): void {
@@ -115,6 +147,10 @@ export class InformationApp {
     this.status.textContent = message;
     this.status.classList.add("is-error");
   }
+}
+
+function openBrowserWindow(url: string): void {
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 function formatPublishedAt(value: number | null): string {

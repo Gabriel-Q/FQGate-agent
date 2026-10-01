@@ -14,6 +14,7 @@ import type {
   MarketDepthPreference,
 } from "@/shared/contracts";
 import {
+  applyPreviewHostActionInset,
   readPreviewSourceContext,
   requestPreviewSourceSelection,
 } from "@/shared/previewSource";
@@ -52,6 +53,7 @@ async function main(): Promise<void> {
   };
   const preferredDepthMode = readDepthMode(argumentsValue?.marketDepthMode);
   const previewSource = readPreviewSourceContext(argumentsValue);
+  applyPreviewHostActionInset(argumentsValue);
   mountNativeApp(
     new CandleApp(requiredRoot(), {
       service: new FqgateCandleService(serviceOptions),

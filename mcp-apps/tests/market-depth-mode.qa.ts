@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { FqgateMarketDepthService } from "../src/adapters/local-api/FqgateMarketDepthService.ts";
 import { parseRealtimePoints } from "../src/adapters/local-api/FqgateMarketDataParsers.ts";
+import { visibleDepthStrength } from "../src/features/candle/OrderBookSummary.ts";
 import { transactionSummaryRowLimit } from "../src/features/candle/TransactionSummary.ts";
 
 const security = { market: "XSHG", code: "600519", name: "贵州茅台" };
@@ -41,6 +42,37 @@ assert.deepEqual(level2Paths.sort(), [
 ]);
 assert.equal(transactionSummaryRowLimit("basic"), 6);
 assert.equal(transactionSummaryRowLimit("level2"), 2);
+assert.deepEqual(
+  visibleDepthStrength(
+    [
+      { level: 1, price: 10, volume: 200 },
+      { level: 2, price: 10, volume: 100 },
+    ],
+    [{ level: 1, price: 10, volume: 100 }],
+  ),
+  {
+    buyAmount: 3000,
+    sellAmount: 1000,
+    buyPercent: 75,
+    sellPercent: 25,
+    hasData: true,
+  },
+  "买卖强度必须按当前可见档位的有效委托金额统一计算",
+);
+assert.deepEqual(
+  visibleDepthStrength(
+    [{ level: 1, price: null, volume: null }],
+    [{ level: 1, price: null, volume: null }],
+  ),
+  {
+    buyAmount: 0,
+    sellAmount: 0,
+    buyPercent: 0,
+    sellPercent: 0,
+    hasData: false,
+  },
+  "没有有效委托金额时不得伪装成五五开",
+);
 
 assert.deepEqual(
   parseRealtimePoints({

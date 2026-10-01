@@ -55,6 +55,7 @@ export class OrderFlowApp {
     this.selected = initial;
     this.options = initial ? [initial] : [];
     this.frame = new AppFrame(host, { realtime: true });
+    this.frame.root.classList.add("order-flow-app");
     this.buildLayout();
     this.bindControls();
     this.render();

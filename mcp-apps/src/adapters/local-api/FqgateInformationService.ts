@@ -19,10 +19,20 @@ interface FqgateInformationCategoryData {
 
 type RawInformationItem = Record<string, unknown>;
 
-const categoryKeywords: Record<InformationCategory, string[]> = {
-  market: ["市场", "要闻", "财经"],
-  security: ["个股", "证券", "公司"],
-  announcement: ["公告", "披露"]
+interface InformationCategoryRecord {
+  id: string;
+  name: string;
+  parentId: string;
+}
+
+/**
+ * 同花顺分类树包含“个股资料”等目录节点，不能用模糊关键词取首项。
+ * 这里按业务语义列出可提供文章列表的叶子栏目，顺序代表优先级。
+ */
+const categoryNames: Record<InformationCategory, readonly string[]> = {
+  market: ["财经要闻", "证券要闻", "要闻"],
+  security: ["改版个股新闻", "个股头条-新闻", "新闻资讯", "新闻"],
+  announcement: ["个股公告", "重要公告", "公司公告", "滚动公告"]
 };
 
 export type FqgateInformationServiceOptions = FqgateHttpClientOptions;
@@ -77,19 +87,33 @@ export class FqgateInformationService implements InformationService {
     );
     const categories = (Array.isArray(data.items) ? data.items : [])
       .filter(isRecord)
-      .map((item) => ({ id: stringValue(item.category_id), name: stringValue(item.name) }))
+      .map((item) => ({
+        id: stringValue(item.category_id),
+        name: stringValue(item.name),
+        parentId: stringValue(item.parent_category_id)
+      }))
       .filter((item) => item.id && item.name);
-    const fallback = categories[0]?.id;
+    const parentIds = new Set(categories.map((item) => item.parentId).filter(Boolean));
     this.categoryIds = new Map(
-      (Object.keys(categoryKeywords) as InformationCategory[]).map((category) => {
-        const matched = categories.find((item) => (
-          categoryKeywords[category].some((keyword) => item.name.includes(keyword))
-        ));
-        return [category, matched?.id || fallback || ""];
+      (Object.keys(categoryNames) as InformationCategory[]).map((category) => {
+        const matched = resolveArticleCategory(categories, parentIds, categoryNames[category]);
+        return [category, matched?.id || ""];
       })
     );
     return this.categoryIds;
   }
+}
+
+function resolveArticleCategory(
+  categories: readonly InformationCategoryRecord[],
+  parentIds: ReadonlySet<string>,
+  preferredNames: readonly string[]
+): InformationCategoryRecord | undefined {
+  for (const name of preferredNames) {
+    const matched = categories.find((item) => item.name === name && !parentIds.has(item.id));
+    if (matched) return matched;
+  }
+  return undefined;
 }
 
 function toInformationItem(
@@ -138,6 +162,10 @@ function safeHttpUrl(value: unknown): string | undefined {
   if (!text) return undefined;
   try {
     const url = new URL(text);
+    if (url.protocol === "http:" && url.hostname === "news.10jqka.com.cn") {
+      url.protocol = "https:";
+    }
+    if (!url.searchParams.toString()) url.search = "";
     return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : undefined;
   } catch {
     return undefined;

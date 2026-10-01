@@ -94,6 +94,12 @@ export class McpAppRuntime {
     return this.app.callServerTool({ name, arguments: argumentsValue });
   }
 
+  async openExternalUrl(url: string): Promise<void> {
+    if (!this.connected) throw new Error("MCP App 尚未完成连接。");
+    const result = await this.app.openLink({ url });
+    if (result.isError) throw new Error("系统浏览器未能打开该地址。");
+  }
+
   getOriginatingToolSnapshot(): OriginatingToolSnapshot {
     return {
       name: this.app.getHostContext()?.toolInfo?.tool.name ?? this.configuredOriginatingToolName,

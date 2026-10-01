@@ -1,9 +1,48 @@
-import { formatCompact, formatPrice } from "@/features/candle/formatters";
+import {
+  formatCompact,
+  formatOrderBookAmount,
+  formatPrice,
+} from "@/features/candle/formatters";
 import type {
   MarketDepthLevel,
   MarketDepthMode,
 } from "@/shared/contracts";
 import { append, element, replace } from "@/ui/dom";
+
+export interface VisibleDepthStrength {
+  buyAmount: number;
+  sellAmount: number;
+  buyPercent: number;
+  sellPercent: number;
+  hasData: boolean;
+}
+
+/** 计算当前界面实际展示档位的委买、委卖金额占比。 */
+export function visibleDepthStrength(
+  bids: readonly MarketDepthLevel[],
+  asks: readonly MarketDepthLevel[],
+): VisibleDepthStrength {
+  const buyAmount = sumValidAmounts(bids);
+  const sellAmount = sumValidAmounts(asks);
+  const totalAmount = buyAmount + sellAmount;
+  if (totalAmount <= 0) {
+    return {
+      buyAmount,
+      sellAmount,
+      buyPercent: 0,
+      sellPercent: 0,
+      hasData: false,
+    };
+  }
+  const buyPercent = (buyAmount / totalAmount) * 100;
+  return {
+    buyAmount,
+    sellAmount,
+    buyPercent,
+    sellPercent: 100 - buyPercent,
+    hasData: true,
+  };
+}
 
 export class OrderBookSummary {
   readonly root = element("section", "order-book-summary");
@@ -60,7 +99,7 @@ export class OrderBookSummary {
       this.levels,
       this.headerRow(),
       ...asks.map((level) => this.depthRow(level, "sell", maximum)),
-      this.midpoint(),
+      this.strengthRow(bids, asks, count),
       ...bids.map((level) => this.depthRow(level, "buy", maximum)),
     );
   }
@@ -68,17 +107,42 @@ export class OrderBookSummary {
   private headerRow(): HTMLElement {
     const row = element("div", "order-book-row is-header");
     row.setAttribute("role", "row");
-    append(row, cell("档位"), cell("价格"), cell("数量"));
+    append(row, cell("档位"), cell("价格"), cell("金额"));
     return row;
   }
 
-  private midpoint(): HTMLElement {
-    const row = element("div", "order-book-midpoint");
-    append(
-      row,
-      element("span", "order-book-midpoint__sell", "卖盘"),
-      element("span", "order-book-midpoint__buy", "买盘"),
+  private strengthRow(
+    bids: readonly MarketDepthLevel[],
+    asks: readonly MarketDepthLevel[],
+    count: number,
+  ): HTMLElement {
+    const strength = visibleDepthStrength(bids, asks);
+    const row = element(
+      "div",
+      `order-book-strength${strength.hasData ? "" : " is-empty"}`,
     );
+    row.setAttribute("role", "row");
+    row.style.setProperty(
+      "--buy-strength",
+      `${strength.hasData ? strength.buyPercent : 50}%`,
+    );
+    row.style.setProperty(
+      "--sell-strength",
+      `${strength.hasData ? strength.sellPercent : 50}%`,
+    );
+    const description = strength.hasData
+      ? `${count}档委买金额 ${formatCompact(strength.buyAmount)}元，占 ${strength.buyPercent.toFixed(1)}%；委卖金额 ${formatCompact(strength.sellAmount)}元，占 ${strength.sellPercent.toFixed(1)}%`
+      : `当前${count}档暂无有效委托金额`;
+    row.setAttribute("aria-label", description);
+    row.title = description;
+    const track = element("div", "order-book-strength__track");
+    track.setAttribute("role", "cell");
+    const buy = element("span", "order-book-strength__buy");
+    const sell = element("span", "order-book-strength__sell");
+    buy.setAttribute("aria-hidden", "true");
+    sell.setAttribute("aria-hidden", "true");
+    append(track, buy, sell);
+    append(row, track);
     return row;
   }
 
@@ -91,7 +155,7 @@ export class OrderBookSummary {
     row.setAttribute("role", "row");
     row.setAttribute(
       "aria-label",
-      `${side === "buy" ? "买" : "卖"}${level.level}，价格 ${formatPrice(level.price)}，数量 ${formatCompact(level.volume)}`,
+      `${side === "buy" ? "买" : "卖"}${level.level}，价格 ${formatPrice(level.price)}，委托金额 ${formatOrderBookAmount(level.price, level.volume)}元`,
     );
     row.style.setProperty(
       "--depth-ratio",
@@ -101,10 +165,23 @@ export class OrderBookSummary {
       row,
       cell(`${side === "buy" ? "买" : "卖"}${level.level}`, "depth-label"),
       cell(formatPrice(level.price), `numeric ${priceTone(level.price, this.previousClose)}`),
-      cell(formatCompact(level.volume), "numeric depth-volume"),
+      cell(formatOrderBookAmount(level.price, level.volume), "numeric depth-volume"),
     );
     return row;
   }
+}
+
+function sumValidAmounts(levels: readonly MarketDepthLevel[]): number {
+  return levels.reduce((sum, { price, volume }) => {
+    return price !== null &&
+      volume !== null &&
+      Number.isFinite(price) &&
+      Number.isFinite(volume) &&
+      price > 0 &&
+      volume > 0
+      ? sum + price * volume
+      : sum;
+  }, 0);
 }
 
 function fillLevels(
