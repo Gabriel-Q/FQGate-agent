@@ -120,10 +120,10 @@ FQGate 默认只监听当前电脑的本机地址，Agent 不会连接公网或�
 - QQ 群：[免费 AI 量化数据](https://qm.qq.com/q/ZQSuiYQZ4Q)，群号：`14546787`
 - 问题反馈：[GitHub Issues](https://github.com/fqgate/FQGate-agent/issues)
 
-微信群二维码会定期失效；当前二维码标注为 2026 年 9 月 30 日前有效。如果下方二维码无法使用，请先加入 QQ 群或提交 Issue 提醒维护者更新。
+微信群二维码会定期失效；当前二维码标注为 2026 年 10 月 10 日前有效。如果下方二维码无法使用，请先加入 QQ 群或提交 Issue 提醒维护者更新。
 
 <p align="center">
-  <img src="./assets/community/wechat-agent-group-qr.png" alt="同花顺 AI Agent 插件交流群二维码，有效期至 2026 年 9 月 30 日" width="320">
+  <img src="./assets/community/wechat-agent-group-qr.png" alt="FQGate 平民量化数据网关交流 2 微信群二维码，有效期至 2026 年 10 月 10 日" width="320">
 </p>
 
 ## 支持项目
@@ -156,6 +156,8 @@ FQGate 默认只监听当前电脑的本机地址，Agent 不会连接公网或�
 | <img src="./assets/sponsors/avatar-placeholder.svg" alt="康诚传媒" width="40" height="40"> | 康诚传媒 | 微信 | 5 | 2026-9-23|
 | <img src="./assets/sponsors/avatar-placeholder.svg" alt="草木皆兵" width="40" height="40"> | 草木皆兵 | 微信 | 5 | 2026-9-24|
 | <img src="./assets/sponsors/avatar-placeholder.svg" alt="**进" width="40" height="40"> | **进 | 支付宝| 10 | 2026-9-24 |
+| <img src="./assets/sponsors/adong.jpg" alt="阿东" width="40" height="40"> | 阿东 | 微信 | 188 | 2026-10-3 |
+| <img src="./assets/sponsors/avatar-placeholder.svg" alt="宏渭" width="40" height="40"> | 宏渭 | 微信 | 5 | 2026-10-3 |
 
 
 
