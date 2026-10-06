@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "npm run typecheck && vite build",
-    "build:website": "npm run typecheck && vite build --base ./ --outDir ../website/demo --emptyOutDir",
     "build:mcp-apps": "npm run typecheck && node scripts/build-mcp-apps.mjs",
     "dev:publish": "npm run typecheck && node --watch-preserve-output --watch-path=src --watch-path=mcp-apps scripts/dev-publish-mcp-apps.mjs",
     "release:mcp-apps": "node scripts/release-mcp-apps.mjs",

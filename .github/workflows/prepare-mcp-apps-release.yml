@@ -51,7 +51,7 @@ jobs:
           configured="$(node -p "require('./mcp-apps/mcp-apps/apps.json').bundleVersion")"
           test "$configured" = "$REQUESTED_VERSION"
           printf '%s' "$configured" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
-      - name: 安装依赖并运行门禁
+      - name: 安装依赖并运行验证
         working-directory: agent
         run: |
           npm --prefix mcp-apps ci

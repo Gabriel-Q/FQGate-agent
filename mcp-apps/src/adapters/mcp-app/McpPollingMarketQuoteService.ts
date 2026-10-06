@@ -12,7 +12,7 @@ export interface McpPollingMarketQuoteServiceOptions extends FqgateHttpClientOpt
   pollIntervalMs?: number;
 }
 
-/** MCP Apps 版多股行情：所有刷新都通过宿主调用 MCP 工具。 */
+/** MCP Apps 版多股行情：所有刷新都通过 AI 客户端调用 MCP 工具。 */
 export class McpPollingMarketQuoteService implements MarketQuoteService {
   readonly kind = "fqgate-mcp-polling";
 

@@ -15,7 +15,7 @@ export interface PreviewSourceContext {
 
 const MAX_HOST_ACTION_INSET = 160;
 
-/** FQGate Desktop 通过入口参数提供账号目录；其他 MCP 宿主不受该扩展影响。 */
+/** FQGate Desktop 通过入口参数提供账号目录；其他 MCP 客户端不受该扩展影响。 */
 export function readPreviewSourceContext(
   argumentsValue: JsonObject | undefined,
 ): PreviewSourceContext | undefined {
@@ -35,7 +35,7 @@ export function readPreviewSourceContext(
   return { selectedInstanceId, sources };
 }
 
-/** 沙箱只发出选择意图；宿主会校验实例并用新的入口上下文重新渲染。 */
+/** 沙箱只发出选择意图；MCP Apps 客户端会校验实例并用新的入口上下文重新渲染。 */
 export function requestPreviewSourceSelection(instanceId: string): void {
   window.parent.postMessage(
     { type: "fqgate.preview.select-source", instanceId },
@@ -43,7 +43,7 @@ export function requestPreviewSourceSelection(instanceId: string): void {
   );
 }
 
-/** FQGate Desktop 可在 App 工具栏内叠放窗口级动作；其他宿主保持零占位。 */
+/** FQGate Desktop 可在 App 工具栏内叠放窗口级动作；其他 MCP 客户端保持零占位。 */
 export function applyPreviewHostActionInset(
   argumentsValue: JsonObject | undefined,
 ): void {

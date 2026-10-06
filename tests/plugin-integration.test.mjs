@@ -17,7 +17,7 @@ const codexMarketplace = readJson(".agents", "plugins", "marketplace.json");
 const apps = readJson("mcp-apps", "mcp-apps", "apps.json");
 const unsupportedAccountOrTradingTool = /fqgate_(?:login|session|portfolio|account_(?!watchlist)|order_(?:place|submit|cancel)|trade_(?:buy|sell))/;
 
-test("仓库根是唯一插件根，旧包装和无合同模块已经移除", () => {
+test("仓库根是唯一插件根，旧包装和非本仓库模块已经移除", () => {
   for (const directory of [
     "AI-plugins",
     "plugins",

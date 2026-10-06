@@ -44,7 +44,7 @@ export class McpAppCommunicationError extends Error {
 
 /**
  * 把现有 FQGate HTTP Service 的 fetch 调用转换为标准 MCP Apps 工具调用。
- * 这样数据解析和原生 App 都继续只有一份，不为不同宿主复制业务实现。
+ * 这样数据解析和原生 App 都继续只有一份，不为不同 AI 客户端复制业务实现。
  */
 export class McpFqgateFetch {
   readonly fetch: typeof globalThis.fetch;

@@ -13,7 +13,7 @@
 ## 不在本许可证范围
 
 - FQGate 主程序源码、调试符号、研究材料、签名私钥和本机数据；
-- 通过 FQGate-releases 单独分发的主程序安装包；
+- 作为本仓库 Release 附件单独分发的 FQGate 主程序安装包；
 - 第三方组件及其各自许可证文本。
 
-FQGate 编译包适用其随包许可；版本、下载地址和校验值由 [FQGate-releases](https://github.com/fqgate/FQGate-releases) 提供。本仓库只记录兼容关系，并维护插件、Skill 与 MCP Apps 源码。
+FQGate 编译包适用其随包许可；版本、下载地址和校验值由 [FQGate Agent Releases](https://github.com/fqgate/FQGate-agent/releases) 提供。Release 附件不因与开源源码使用同一公开入口而自动适用 AGPL-3.0-only。

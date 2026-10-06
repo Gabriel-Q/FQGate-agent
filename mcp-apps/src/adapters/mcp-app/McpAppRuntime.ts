@@ -28,7 +28,7 @@ type ToolResultListener = (result: McpToolResult) => void;
 
 /**
  * 所有厂商共用的 MCP Apps 生命周期封装。这里仅处理标准 postMessage
- * 通信、宿主样式和销毁，不感知任何具体 App 或页面布局。
+ * 通信、AI 客户端样式和销毁，不感知任何具体 App 或页面布局。
  */
 export class McpAppRuntime {
   readonly extensions: OptionalHostExtensions;
@@ -55,7 +55,7 @@ export class McpAppRuntime {
       { autoResize: true, strict: true, allowUnsafeEval: false }
     );
 
-    // 一次性通知必须在 connect 前注册，避免严格宿主在握手后立即发送时丢失。
+    // 一次性通知必须在 connect 前注册，避免严格实现的客户端在握手后立即发送时丢失。
     this.app.addEventListener("toolinput", ({ arguments: value }) => {
       this.acceptToolInput(isJsonObject(value) ? value : {});
     });

@@ -14,7 +14,7 @@ export interface McpPollingConnectionOptions {
 const DEFAULT_INTERVAL_MS = 3_000;
 
 /**
- * MCP Apps 不能假设组件沙箱可以直连本机 WebSocket，因此通过宿主的 MCP
+ * MCP Apps 不能假设组件沙箱可以直连本机 WebSocket，因此通过 AI 客户端的 MCP
  * 工具调用定时刷新。每轮请求结束后再安排下一轮，避免慢请求发生重叠。
  */
 export class McpPollingConnection {

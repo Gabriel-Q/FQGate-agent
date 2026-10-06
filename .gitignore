@@ -15,7 +15,7 @@ __pycache__/
 **/bin/
 **/obj/
 
-# 本机 MCP 与宿主配置
+# 本机 MCP 与 AI 客户端配置
 **/.mcp.json
 !/.mcp.json
 **/.env

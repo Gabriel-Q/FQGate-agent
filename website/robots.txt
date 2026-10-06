@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://zhuyifang.github.io/tonghuasun-agent/sitemap.xml

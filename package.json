@@ -23,7 +23,6 @@
   "type": "module",
   "scripts": {
     "build:mcp-apps": "npm --prefix mcp-apps run build:mcp-apps",
-    "build:website-demo": "npm --prefix mcp-apps run build:website",
     "dev:publish": "npm --prefix mcp-apps run dev:publish",
     "embed:mcp-apps": "npm --prefix mcp-apps run typecheck && node scripts/embed-mcp-apps.mjs",
     "release:mcp-apps": "npm --prefix mcp-apps run release:mcp-apps --",

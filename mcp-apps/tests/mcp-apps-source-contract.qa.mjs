@@ -14,7 +14,7 @@ for (const path of sourceFiles) {
   assert.doesNotMatch(
     body,
     /\b(?:LoginPanel|LoginService|QrLogin|SmsLogin)\b/,
-    `${name} 不得包含登录界面合同`,
+    `${name} 不得包含登录界面代码`,
   );
   assert.doesNotMatch(
     body,
@@ -76,7 +76,7 @@ const candleStyle =
 assert.match(
   candleStyle,
   /width:\s*100%[^;]*;\s*height:\s*100vh/,
-  "个股 K 线必须跟随宿主内容区尺寸",
+  "个股 K 线必须跟随 AI 客户端内容区尺寸",
 );
 assert.match(candleStyle, /border:\s*0/, "个股 K 线根容器不得重复添加卡片边框");
 assert.match(
@@ -92,7 +92,7 @@ assert.match(
 assert.doesNotMatch(
   candleStyle,
   /aspect-ratio/,
-  "个股 K 线不得在宿主窗口内再固定画布比例",
+  "个股 K 线不得在 AI 客户端窗口内再固定画布比例",
 );
 const candleTitleStyle =
   marketStyles.match(/\.candle-heading__title\s*\{([^}]*)\}/s)?.[1] ?? "";
@@ -279,7 +279,7 @@ assert.match(
 assert.match(
   candleSource,
   /"is-inspector-panorama"/,
-  "宿主只能在全景盘口状态隐藏 K 线",
+  "AI 客户端只能在全景盘口状态隐藏 K 线",
 );
 const detailServiceSource = readFileSync(
   join(sourceRoot, "adapters", "local-api", "FqgateMarketDetailService.ts"),
@@ -350,7 +350,7 @@ assert.match(
 assert.match(
   informationSource,
   /event\.preventDefault\(\);[\s\S]*?this\.openItem\(item\)/,
-  "资讯链接必须交给宿主打开系统浏览器",
+  "资讯链接必须交给 AI 客户端打开系统浏览器",
 );
 const mcpRuntimeSource = readFileSync(
   join(sourceRoot, "adapters", "mcp-app", "McpAppRuntime.ts"),

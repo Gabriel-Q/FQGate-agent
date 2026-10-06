@@ -1,6 +1,6 @@
 # FQGate MCP Apps
 
-这里是 FQGate MCP Apps 的唯一源码。FQGate MCP Server 在运行时返回构建后的 `ui://` HTML，Codex 等支持 MCP Apps 的宿主负责渲染。
+这里是 FQGate MCP Apps 的唯一源码。FQGate MCP Server 在运行时返回构建后的 `ui://` HTML，Codex 等支持 MCP Apps 的 AI 客户端负责渲染。
 
 当前 Apps：
 
@@ -42,14 +42,14 @@ npm run embed:mcp-apps -- --fqgate-root ../fqgate
 
 ## 正式发布
 
-本地发布命令只生成一个可提交到发行仓库的签名目录：
+本地发布命令只生成一个交给正式发行流程验收的签名目录：
 
 ```bash
-npm run release:mcp-apps -- --output <FQGate-releases>/releases/v2/mcp-apps \
+npm run release:mcp-apps -- --output /path/to/public-channel/releases/v2/mcp-apps \
   --signing-key-file <安全目录>/mcp-apps-ed25519-private.pem
 ```
 
-正式环境使用 GitHub Actions 的受保护密钥。输出结构为：
+正式环境使用受保护的签名密钥和公开仓库写入凭据。本地生成目录不代表已经公开发布。输出结构为：
 
 ```text
 mcp-apps/
@@ -61,4 +61,4 @@ mcp-apps/
     *.html
 ```
 
-版本目录不可覆盖；稳定指针最后切换。详细流程见[自动发布](../docs/自动发布.md)。
+版本目录不可覆盖；稳定指针最后切换。
